@@ -9,3 +9,5 @@ project1/CMakeLists.txt*
 project1/launch/
 project1/package.xml
 project1/worlds/
+
+*.swp
