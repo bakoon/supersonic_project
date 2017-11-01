@@ -184,6 +184,20 @@ void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, d
 
 int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min, int K, double MaxStep) {
     //TODO
+    for(int i = 0; i < 20000; ++i){
+        point randVertex = randomState(x_max, x_in, y_max, y_min);
+	int idx_near = nearestNeighbor(randVertex, MaxStep);
+	double out[5];
+        if( newState(out, ptrTable[idx_near], randVertex, MaxStep) ){
+	    point newVertex;
+	    newVertex.x = out[0];
+	    newVertex.y = out[1];
+	    newVertex.th = out[2];
+            addVertex(newVertex, randVertex, idx_near,out[3],out[4]);
+	    double distance = std::sqrt((out[0] - x_goal[0])*(out[0] - x_goal[0]) + (out[1] - x_goal[1])*(out[1] - x_goal[1]));
+	    if(i > K && distance < 0.2) break;
+	}
+    }
 }
 
 point rrtTree::randomState(double x_max, double x_min, double y_max, double y_min) {
@@ -244,6 +258,7 @@ int rrtTree::nearestNeighbor(point x_rand) {
 
 int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //TODO
+    
 }
 
 bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
