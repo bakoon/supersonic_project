@@ -6,6 +6,9 @@
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))  
 #include <cmath>
 
+double car_speed = 2.0;
+double frequency = 60.0;
+
 double max_alpha = 0.2;
 double L = 0.325;
 
@@ -244,6 +247,65 @@ int rrtTree::nearestNeighbor(point x_rand) {
 
 int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //TODO
+    //generate randomState?
+
+    const int n_route = 100;
+    double min_distance = DBL_MAX;
+    int returnvalue = 1; // decide to use the output
+    double first_points_x[n_route];
+    double first_points_y[n_route];
+
+    for (int i = 0; i < n_route; i++) {
+    
+        double d = (car_speed / frequency) * ((double)rand()/(double)RAND_MAX); // less than car_speed / frequency
+        double alpha = x_near.th + (((double)rand()/(double)RAND_MAX) - 0.5) * 2 * max_alpha; // in [-max_alpha, max_alpha] 
+
+        double radius = L / tan(alpha);
+        double beta = d / radius;
+
+        double theta = x_near.th;
+
+        double centerX = x_near.x - radius * sin(theta);
+        double centerY = x_near.y - radius * cos(theta);
+
+        int n_iter = 1 + MaxStep / d;
+
+        double newx = centerX + radius * sin(theta);
+        double newy = centery - radius * con(theta);
+
+        first_points_x[i] = newx;
+        first_points_y[i] = newy;
+        
+        point x1 = NULL;
+        point x2 = x_near;
+
+        for (int i = 0; i < n_iter; i++) {
+            theta = theta + beta;
+            newx = centerX + radius * sin(theta);
+            newy = centery - radius * con(theta);
+
+            x1 = x2;
+            x2.x = newx;
+            x2.y = newy;
+
+            bool collision = isCollision(x1, x2, d, alpha);
+            if (!collision) {
+                double x_err = x_rand.x - newx;
+                double y_err = x_rand.y - newy;
+                double distance = x_err * x_err + y_err * y_err;
+                if (min_distance > distance) {
+                    returnvalue = 0;
+                    min_distance = distance;
+                    out[0] = x2.x;
+                    out[1] = x2.y;
+                    out[2] = atan2(y_err, x_err);
+                    out[3] = alpha;
+                    out[4] = d;
+                }
+            }
+        }
+    }
+    return returnvalue;
 }
 
 bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
@@ -259,6 +321,7 @@ bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
     double x2_j = x2.y/this->res + this->map_origin_y;
 
     double radius = L / tan(alpha);
+    double beta = d / radius;
 
     double theta = x1.th;
     double centerX = x1_i - radius * sin(theta);
@@ -266,19 +329,27 @@ bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
     
     double distance = DBL_MAX;
 
-    while (distance > L*L) { // until when?
+    int iter = 0;
+    int max_iter = 10;
 
-        double beta = d / radius;
+    double newx = x1_i;
+    double newy = x1_j;
 
-        double newx = centerX + radius * sin(theta + beta);
-        double newy = centery - radius * con(theta + beta);
+    for (int i = 0; i < max_iter; i++) {
 
+        newx = centerX + radius * sin(theta + beta);
+        newy = centery - radius * con(theta + beta);
         theta = theta + beta;
-        distance = (x2.x - newx) * (x2.x - newx) + (x2.y - newy) * (x2.y - newy);
         if (map_margin.at<uchar>((int)(newx+0.5), (int)(newy+0.5)) == 0) { // occupied 
         //if (map_margin.at<uchar>((int)(newx+0.5), (int)(newy+0.5)) == 0 || map_margin.at<uchar>((int)newx, (int)newy) == 125 ) { // occupied or unknown
         // ***add*** when 125, check around
             return true;
+        }
+
+
+        distance = ((x2.x - newx) * (x2.x - newx) + (x2.y - newy) * (x2.y - newy))/this->res;
+        if (iter == max_iter) {
+            break;
         }
     }
     return false;
