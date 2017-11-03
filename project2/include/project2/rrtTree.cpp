@@ -187,19 +187,29 @@ void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, d
 
 int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min, int K, double MaxStep) {
     //TODO
+    printf("generateRRT start\n");
     for (int i = 0; i < 20000; ++i) {
         point randVertex = randomState(x_max, x_min, y_max, y_min);
         int idx_near = nearestNeighbor(randVertex, MaxStep);
-        double out[5];
-
-        if (!this->newState(out, ptrTable[idx_near]->location, randVertex, MaxStep) ){
-            point newVertex;
-            newVertex.x = out[0];
-            newVertex.y = out[1];
-            newVertex.th = out[2];
-            addVertex(newVertex, randVertex, idx_near, out[3], out[4]);
-            double distance = std::sqrt((out[0] - x_goal.x)*(out[0] - x_goal.x) + (out[1] - x_goal.y));
-            if (i > K && distance < 0.2) break;
+        if (idx_near != -1) {
+            printf("nearestNeighbor ok\n");
+            double out[5];
+            if (!this->newState(out, ptrTable[idx_near]->location, randVertex, MaxStep) ){
+                point newVertex;
+                newVertex.x = out[0];
+                newVertex.y = out[1];
+                newVertex.th = out[2];
+                addVertex(newVertex, randVertex, idx_near, out[3], out[4]);
+                double distance = std::sqrt((out[0] - x_goal.x)*(out[0] - x_goal.x) + (out[1] - x_goal.y)*(out[1] - x_goal.y));
+                printf("%n, distance %d\n", i, distance);
+                if (i > K && distance < 0.2) break;
+            }
+            else {
+                i--;
+            }
+        }
+        else {
+            i--;
         }
     }
 }
@@ -218,37 +228,39 @@ point rrtTree::randomState(double x_max, double x_min, double y_max, double y_mi
 
 int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     //TODO
-    int min_idx = 0;
+    int min_idx = -1;
     double min_dist = DBL_MAX;
 
     //max_alpha
     int start_idx = 0; // need check
 
     for(int i = start_idx; i < this->count; i++) {
-        point tempPoint = this->ptrTable[i]->location;
-        double distance = (tempPoint.x - x_rand.x) * (tempPoint.x - x_rand.x) + (tempPoint.y - x_rand.y) * (tempPoint.y - x_rand.y);
-        double th_err = tempPoint.th - x_rand.th; // need check
-		th_err = fmod(th_err, 2*M_PI);
+        point x_near = this->ptrTable[i]->location;
+        double distance = (x_near.x - x_rand.x) * (x_near.x - x_rand.x) + (x_near.y - x_rand.y) * (x_near.y - x_rand.y);
+        double x_err = x_rand.x - x_near.x; 
+        double y_err = x_rand.y - x_near.y;
+        double th_err = atan2(y_err, x_err);  
         bool alpha_check;
-		if (th_err > M_PI) {
-			th_err -= 2*M_PI;
+		if (th_err <= -M_PI) {
             alpha_check = th_err > -max_alpha;
 		}
-		else if (th_err < -M_PI) {
-			th_err += 2*M_PI;
+		else if (th_err >= M_PI) {
             alpha_check = th_err < max_alpha;
 		}
+        //printf("min_dist = %.3f, MaxStep = %.3f, th_err : %.3f\n", min_dist, MaxStep*MaxStep, th_err);
 
-        if (distance < min_dist && distance < MaxStep && alpha_check ) { ///////need check
+        if (distance < min_dist && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
             min_idx = i;
             min_dist = distance;
         }
     }
+    //printf("nearest neighbor : %d\n", min_idx);
     return min_idx;
 }
 
 int rrtTree::nearestNeighbor(point x_rand) {
     //TODO
+    //why need this?
     int min_idx;
     double min_dist = DBL_MAX;
     for(int i = 0; i < this->count; i++) {

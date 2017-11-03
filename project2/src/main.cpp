@@ -240,7 +240,7 @@ void generate_path_RRT()
 
     for (int i = 0; i < waypoints.size()-1; i++) {
         rrtTree thisTree = rrtTree(waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
-        thisTree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep); // error!
+        thisTree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
         std::vector<traj> this_traj = thisTree.backtracking_traj(); 
 		for (int j = this_traj.size()-1; j >= 0; j--) {
 			path_RRT.push_back(this_traj[j]);
