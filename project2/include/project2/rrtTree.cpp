@@ -220,10 +220,10 @@ point rrtTree::randomState(double x_max, double x_min, double y_max, double y_mi
     double randY = (y_max - y_min) * (double)rand() / (double)RAND_MAX;
     double newX = x_min + randX;
     double newY = y_min + randY;
-    point newPoint;
-    newPoint.x = newX;
-    newPoint.y = newY;
-    return newPoint;
+    point *newPoint = new point;
+    newPoint->x = newX;
+    newPoint->y = newY;
+    return *newPoint;
 }
 
 int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
