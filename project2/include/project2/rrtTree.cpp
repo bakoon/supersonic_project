@@ -206,7 +206,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
                 newVertex.y = out[1];
                 newVertex.th = out[2];
                 addVertex(newVertex, randVertex, idx_near, out[3], out[4]);
-                double distance = std::sqrt((out[0] - x_goal.x)*(out[0] - x_goal.x) + (out[1] - x_goal.y)*(out[1] - x_goal.y));
+               double distance = std::sqrt((out[0] - x_goal.x)*(out[0] - x_goal.x) + (out[1] - x_goal.y)*(out[1] - x_goal.y));
                 printf("i: %d, distance %f\n", i, distance);
                 if (i > K && distance < 0.2) break;
             }
@@ -244,10 +244,12 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     //printf("copied x = %f, copied y = %f\n", x, y);
     //max_alpha
     int start_idx = 0; // need check
-
+    printf("start nearestNeighbor\n");
     for(int i = start_idx; i < this->count; i++) {
         point x_near = this->ptrTable[i]->location;
         double distance = (x_near.x - x_rand.x) * (x_near.x - x_rand.x) + (x_near.y - x_rand.y) * (x_near.y - x_rand.y);
+	if(min_dist == DBL_MAX)	printf("ptr_table[%d]: %f, %f, %f, parent_idx: %d, distance: %.4f, min_dist: DBL_MAX\n", i, x_near.x, x_near.y, x_near.th, this->ptrTable[i]->idx_parent, distance);
+	else printf("ptr_table[%d]: %f, %f, %f, distance: %.4f, min_dist: %10.4f\n",i, x_near.x, x_near.y, x_near.th, distance, min_dist);
         double x_err = x_rand.x - x_near.x; 
         double y_err = x_rand.y - x_near.y;
         double th_err = atan2(y_err, x_err) - x_near.th; 
@@ -265,11 +267,11 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
             alpha_check = th_err < max_alpha;
 		}
 		*/
-	if(th_err <= max_alpha || th_err >= -max_alpha)alpha_check = true;
-	else th_err = false;
+	if(th_err <= max_alpha && th_err >= -max_alpha)alpha_check = true;
+	else alpha_check = false;
         //printf("min_dist = %.3f, MaxStep = %.3f, th_err : %.3f\n", min_dist, MaxStep*MaxStep, th_err);
 	//printf("after check - alpha_check: %d\n", alpha_check);
-        if (distance < min_dist && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
+        if ((distance < min_dist) && (distance < MaxStep*MaxStep) && alpha_check ) { ///////need check
             min_idx = i;
             min_dist = distance;
         }
@@ -346,7 +348,6 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
                 double y_err = x_rand.y - newy;
                 double distance = x_err * x_err + y_err * y_err;
                 if (min_distance > distance) {
-		    printf("do I die here?\n");
                     returnvalue = 0;
                     min_distance = distance;
                     out[0] = x2.x;
@@ -356,6 +357,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
                     out[4] = d;
                 }
             }
+	if(i == n_route - 1)printf("i == n_route but not dead yet\n");
         }
     }
     printf("End of newState function\n");
