@@ -29,6 +29,7 @@ double world_x_max;
 double world_y_min;
 double world_y_max;
 
+
 //parameters you should adjust : K, margin, MaxStep
 int margin = 15;
 int K = 1500;
@@ -236,6 +237,15 @@ void generate_path_RRT()
      * 4.  when you store path, you have to reverse the order of points in the generated path since BACKTRACKING makes a path in a reverse order (goal -> start).
      * 5. end
      */
+
+    for (int i = 0; i < waypoints.size()-1; i++) {
+        rrtTree thisTree = rrtTree(waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
+        thisTree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+        std::vector<traj> this_traj = thisTree.backtracking_traj(); 
+		for (int j = this_traj.size()-1; j >= 0; j--) {
+			path_RRT.push_back(this_traj[j]);
+		}
+    }
 }
 
 void set_waypoints()
