@@ -5,6 +5,9 @@
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))  
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))  
 #include <cmath>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 double car_speed = 2.0;
 double frequency = 60.0;
@@ -196,6 +199,11 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     point randVertex;
     point newVertex;
 
+    //file to save the data
+    std::string file_name = "RRT_data.txt";
+    std::ofstream out_file(file_name.c_str());
+    out_file << "index\t" << "x\t y\t th\t alpha\t idx_parent\t distance" << std::endl;
+
     for (int i = 0; i < 20000; ++i) {
         randVertex = randomState(x_max, x_min, y_max, y_min);
 	idx_near = nearestNeighbor(randVertex, MaxStep);
@@ -205,14 +213,16 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
 	    isNewState = this->newState(out, ptrTable[idx_near]->location, randVertex, MaxStep);
 	    //printf("isNewState: %d, !isNewState: %d", isNewState, !isNewState);
             if (!isNewState){
-		printf("isNewState: %d\n", isNewState);
+		//printf("isNewState: %d\n", isNewState);
                 newVertex.x = out[0];
                 newVertex.y = out[1];
                 newVertex.th = out[2];
                 addVertex(newVertex, randVertex, idx_near, out[3], out[4]);
                 distance = std::sqrt((out[0] - x_goal.x)*(out[0] - x_goal.x) + (out[1] - x_goal.y)*(out[1] - x_goal.y));
-		printf("newVertex.point %f, %f, %f, alpha: %f, idx_parent: %d\n", newVertex.x, newVertex.y, newVertex.th,out[3], idx_near); 
-                printf("i: %d, distance %f\n", i, distance);
+		//printf("newVertex.point %f, %f, %f, alpha: %f, idx_parent: %d\n", newVertex.x, newVertex.y, newVertex.th,out[3], idx_near); 
+                //printf("i: %d, distance %f\n", i, distance);
+		out_file << i << '\t' << newVertex.x << '\t' << newVertex.y << '\t' << newVertex.th << '\t'
+			<< out[3] << '\t' << idx_near << '\t' << distance << std::endl;
                 if (i > K && distance < 0.2){
 			printf("met the goal!!\n");
 		       	break;
@@ -325,7 +335,9 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         d = (car_speed / frequency) * ((double)rand()/(double)RAND_MAX); // less than car_speed / frequency
         alpha = (((double)rand()/(double)RAND_MAX) - 0.5) * 2 * max_alpha; // in [-max_alpha, max_alpha] 
 
-        radius = std::abs( L / tan(alpha) );
+        //radius = std::abs( L / tan(alpha) );
+	//is this value not supposed to be absolute value?
+	radius = L/tan(alpha);
         beta = d / radius;
 
 	theta_alpha = x_near.th;
@@ -342,9 +354,11 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 	//calculating possible values to be saved
         first_points_x = newx;
         first_points_y = newy;
-	first_err_x = (newx - x_near.x);
-	first_err_y = (newy - x_near.y);
-	first_points_th = atan2(first_err_y,first_err_x);
+	//testing new_theta
+	//first_err_x = (newx - x_near.x);
+	//first_err_y = (newy - x_near.y);
+	//first_points_th = atan2(first_err_y,first_err_x);
+	first_points_th = x_near.th + alpha;
         
         point x1;
         point x2 = x_near;
@@ -397,7 +411,9 @@ bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
     double x2_i = x2.x/this->res + this->map_origin_x;
     double x2_j = x2.y/this->res + this->map_origin_y;
 
-    double radius = L / std::abs(tan(alpha));
+    //double radius = L / std::abs(tan(alpha));
+    //is this value not supposed to be abs?
+    double radius = L / tan(alpha);
     double beta = d / radius;
 
     double theta = x1.th;
