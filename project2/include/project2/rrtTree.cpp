@@ -190,7 +190,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     //printf("generateRRT start\n");
     for (int i = 0; i < 20000; ++i) {
         point randVertex = randomState(x_max, x_min, y_max, y_min);
-        //printf("randVertex.x = %f, randVertex.y = %f\n", randVertex.x, randVertex.y);
+        printf("randVertex.x = %f, randVertex.y = %f\n", randVertex.x, randVertex.y);
 	int idx_near = nearestNeighbor(randVertex, MaxStep);
 	//printf("nearestNeighbor run\n");
 	printf("idx_near: %d \n", idx_near);
@@ -235,21 +235,16 @@ point rrtTree::randomState(double x_max, double x_min, double y_max, double y_mi
 
 int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     //TODO
-    //printf("%f, %f\n", x_rand.x, x_rand.y);
     int min_idx = -1;
     double min_dist = DBL_MAX;
-    //double x = x_rand.x;
-    //double y = x_rand.y;
-    //printf("xrand.x = %f, xrand.y =  %f\n", x_rand.x, x_rand.y);
-    //printf("copied x = %f, copied y = %f\n", x, y);
-    //max_alpha
+    printf("xrand.x = %f, xrand.y =  %f\n", x_rand.x, x_rand.y);
     int start_idx = 0; // need check
-    printf("start nearestNeighbor\n");
+//    printf("start nearestNeighbor\n");
     for(int i = start_idx; i < this->count; i++) {
         point x_near = this->ptrTable[i]->location;
         double distance = (x_near.x - x_rand.x) * (x_near.x - x_rand.x) + (x_near.y - x_rand.y) * (x_near.y - x_rand.y);
-	if(min_dist == DBL_MAX)	printf("ptr_table[%d]: %f, %f, %f, parent_idx: %d, distance: %.4f, min_dist: DBL_MAX\n", i, x_near.x, x_near.y, x_near.th, this->ptrTable[i]->idx_parent, distance);
-	else printf("ptr_table[%d]: %f, %f, %f, distance: %.4f, min_dist: %10.4f\n",i, x_near.x, x_near.y, x_near.th, distance, min_dist);
+//	if(min_dist == DBL_MAX)	printf("ptr_table[%d]: %f, %f, %f, parent_idx: %d, distance: %.4f, min_dist: DBL_MAX\n", i, x_near.x, x_near.y, x_near.th, this->ptrTable[i]->idx_parent, distance);
+//	else printf("ptr_table[%d]: %f, %f, %f, parent_idx: %d, distance: %.4f, min_dist: %10.4f\n",i, x_near.x, x_near.y, x_near.th, this->ptrTable[i]->idx_parent, distance, min_dist);
         double x_err = x_rand.x - x_near.x; 
         double y_err = x_rand.y - x_near.y;
         double th_err = atan2(y_err, x_err) - x_near.th; 
@@ -301,31 +296,41 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     const int n_route = 100;
     double min_distance = DBL_MAX;
     int returnvalue = 1; // decide whether to use the output, 1 : not use
-    double first_points_x[n_route];
-    double first_points_y[n_route];
     printf("start of newStatefunction\n");
     printf("x_rand.x = %f, x_rand.y = %f \n",x_rand.x, x_rand.y);
+
+    //assigning a first_points.
+    double first_points_x;
+    double first_points_y;
+    double first_err_x;
+    double first_err_y;
+    double first_points_th;
+
     for (int i = 0; i < n_route; i++) {
     
         double d = (car_speed / frequency) * ((double)rand()/(double)RAND_MAX); // less than car_speed / frequency
         double alpha = (((double)rand()/(double)RAND_MAX) - 0.5) * 2 * max_alpha; // in [-max_alpha, max_alpha] 
 
-        double radius = L / tan(alpha);
+        double radius = std::abs( L / tan(alpha) );
         double beta = d / radius;
 
 	double theta_alpha = x_near.th;
         double theta_beta = x_near.th;
 
-        double centerX = x_near.x - radius * sin(theta_beta);
-        double centerY = x_near.y - radius * cos(theta_beta);
+        double centerX = x_near.x - radius * sin(x_near.th);
+        double centerY = x_near.y + radius * cos(x_near.th);
 
         int n_iter = 1 + MaxStep / d;
 
-        double newx = centerX + radius * sin(theta_beta);
-        double newy = centerY - radius * cos(theta_beta);
+        double newx = centerX + radius * sin(x_near.th + beta);
+        double newy = centerY - radius * cos(x_near.th + beta);
 
-        first_points_x[i] = newx;
-        first_points_y[i] = newy;
+	//calculating possible values to be saved
+        first_points_x = newx;
+        first_points_y = newy;
+	first_err_x = (newx - x_near.x);
+	first_err_y = (newy - x_near.y);
+	first_points_th = atan2(first_err_y,first_err_x);
         
         point x1;
         point x2 = x_near;
@@ -350,9 +355,9 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
                 if (min_distance > distance) {
                     returnvalue = 0;
                     min_distance = distance;
-                    out[0] = x2.x;
-                    out[1] = x2.y;
-                    out[2] = atan2(y_err, x_err);
+                    out[0] = first_points_x;
+                    out[1] = first_points_y;
+                    out[2] = first_points_th;
                     out[3] = alpha;
                     out[4] = d;
                 }
