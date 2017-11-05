@@ -190,6 +190,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     printf("generateRRT start\n");
     for (int i = 0; i < 20000; ++i) {
         point randVertex = randomState(x_max, x_min, y_max, y_min);
+        printf("randomstate given : %p, %.3f, %.3f\n", &randVertex, randVertex.x, randVertex.y);
         int idx_near = nearestNeighbor(randVertex, MaxStep);
         if (idx_near != -1) {
             printf("nearestNeighbor ok\n");
@@ -223,6 +224,7 @@ point rrtTree::randomState(double x_max, double x_min, double y_max, double y_mi
     point newPoint;
     newPoint.x = newX;
     newPoint.y = newY;
+    printf("randomState x, y : %p, %.3f, %.3f\n", &newPoint, newX, newY);
     return newPoint;
 }
 
@@ -230,12 +232,17 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     //TODO
     int min_idx = -1;
     double min_dist = DBL_MAX;
+    point temp = x_rand;
+    double x = x_rand.x;
+    double y = x_rand.y;
+    printf("%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\n", x, y, x_rand.x, x_rand.y, temp.x, temp.y);
 
     //max_alpha
     int start_idx = 0; // need check
 
     for(int i = start_idx; i < this->count; i++) {
         point x_near = this->ptrTable[i]->location;
+        printf("%d, %d, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\n", x_near.x, x_near.y, x_rand.x, x_rand.y, x, y, temp.x, temp.y);
         double distance = (x_near.x - x_rand.x) * (x_near.x - x_rand.x) + (x_near.y - x_rand.y) * (x_near.y - x_rand.y);
         double x_err = x_rand.x - x_near.x; 
         double y_err = x_rand.y - x_near.y;
@@ -247,7 +254,7 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
 		else if (th_err >= M_PI) {
             alpha_check = th_err < max_alpha;
 		}
-        //printf("min_dist = %.3f, MaxStep = %.3f, th_err : %.3f\n", min_dist, MaxStep*MaxStep, th_err);
+        printf("min_dist = %.3f, MaxStep = %.3f, th_err : %.3f\n", min_dist, MaxStep*MaxStep, th_err);
 
         if (distance < min_dist && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
             min_idx = i;
