@@ -290,7 +290,7 @@ void generate_path_RRT()
     //rrtTree *thisTree = NULL;
 
     printf("waypoint size : %d\n", waypoints.size());
-    for (int i = 1; i < waypoints.size()-1; i++) {
+    for (int i = 1; i < waypoints.size(); i++) {
         printf("generateRRT %d / %d\n", i, waypoints.size()-1);
         point x_init = waypoints[i-1];
         point x_goal = waypoints[i];

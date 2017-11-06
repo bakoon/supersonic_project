@@ -186,7 +186,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     //TODO
     //printf("generateRRT start\n");
     int count = 0;
-    const int max_route = 10000;
+    const int max_route = 20000;
     const int goal_bias = 20;
     bool bool_goal_bias = false;
     //for (int i = 0; i < max_route; ++i) {
@@ -202,12 +202,13 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
             randVertex = randomState(x_max, x_min, y_max, y_min);
         }
         int idx_near = nearestNeighbor(randVertex, MaxStep);
+
+        //printf("idx_near = %d\n", idx_near);
         if (idx_near != -1) {
             //printf("nearestNeighbor ok\n");
-            printf("idx_near = %d\n", idx_near);
             double out[5];
             int getNewState = this->newState(out, ptrTable[idx_near]->location, randVertex, MaxStep);
-            printf("getNewState %d\n", getNewState);
+            //printf("getNewState %d\n", getNewState);
             if (getNewState == 0) {
                 count++;
                 bool_goal_bias = true;
@@ -219,7 +220,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
                 double alpha = out[3];
                 double d = out[4];
                 
-                printf("newV x, y, th %.3f, %.3f, %.3f\n", out[0], out[1], out[2]);
+                //printf("newV x, y, th %.3f, %.3f, %.3f\n", out[0], out[1], out[2]);
                 addVertex(newVertex, randVertex, idx_near, alpha, d);
                 //printf("before distance\n");
                 double distance = (newVertex.x - this->x_goal.x)*(newVertex.x - this->x_goal.x) + (newVertex.y - this->x_goal.y)*(newVertex.y - this->x_goal.y);
@@ -227,12 +228,12 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
                 //double distance = std::sqrt((out[0] - this->x_goal.x)*(out[0] - this->x_goal.x) + (out[1] - this->x_goal.y)*(out[1] - this->x_goal.y));
                 if (count > K && distance < 0.2*0.2) {
                     break;
-                    printf("early stop\n");
+                    //printf("early stop\n");
                 }
             }
         }
     }
-    printf("generateRRT fin\n");
+    //printf("generateRRT fin\n");
 }
 
 point rrtTree::randomState(double x_max, double x_min, double y_max, double y_min) {
@@ -266,22 +267,29 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
         double distance = (x_near.x - x_rand.x) * (x_near.x - x_rand.x) + (x_near.y - x_rand.y) * (x_near.y - x_rand.y);
         double x_err = x_rand.x - x_near.x; 
         double y_err = x_rand.y - x_near.y;
-        double th_err = atan2(y_err, x_err);  
+        //------------------------------I have changed this for test---------//
+        double th_err = x_near.th - atan2(y_err, x_err);  
         bool alpha_check;
+        if(th_err <= max_alpha && th_err >= -max_alpha)alpha_check = true;
+        else alpha_check = false;
+        /*
 		if (th_err <= -M_PI) {
             alpha_check = th_err > -max_alpha;
 		}
 		else if (th_err >= M_PI) {
             alpha_check = th_err < max_alpha;
 		}
+        */
         //printf("min_dist = %.3f, MaxStep = %.3f, th_err : %.3f, %d\n", MIN(100, min_dist), MaxStep*MaxStep, th_err, alpha_check);
 
-        if (distance < min_dist && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
+        //if (distance < min_dist && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
+        //testing whether distance < MaxStep effect the result
+        if (distance < min_dist  && alpha_check ) { ///////need check
             min_idx = i;
             min_dist = distance;
         }
     }
-    printf("nearest neighbor : %d\n", min_idx);
+    //printf("nearest neighbor : %d\n", min_idx);
     return min_idx;
 }
 
@@ -317,7 +325,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     randX.x = x_rand.x;
     randX.y = x_rand.y;
     randX.th = x_rand.th;
-    printf("xnear %.3f, %.3f, xrand %.3f, %.3f\n", nearX.x, nearX.y, randX.x, randX.y);
+    //printf("xnear %.3f, %.3f, xrand %.3f, %.3f\n", nearX.x, nearX.y, randX.x, randX.y);
 
     for (int i = 0; i < max_try; i++) {
         double alpha = (((double)rand()/(double)RAND_MAX) - 0.5) * 2 * max_alpha; // in [-max_alpha, max_alpha] 
@@ -354,7 +362,8 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     if (!collisionCheck) {
         out[0] = newPoint.x;
         out[1] = newPoint.y;
-        out[2] = atan2((newPoint.y - randX.y), (newPoint.x - randX.x));
+        //out[2] = atan2((newPoint.y - randX.y), (newPoint.x - randX.x));
+        out[2] = x_near.th + new_alpha;
         out[3] = new_alpha;
         out[4] = new_d;
         return 0;
@@ -364,9 +373,12 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 
 bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
     //TODO
+    //printf("\n\n\n\nx2 %.3f, %.3f\n", x2.x, x2.y);
+    bool check_enterance = false;
 
-    double map_row_size = this->map.rows; // size info;
-    double map_col_size = this->map.cols;
+    int map_row_size = this->map.rows; // size info;
+    int map_col_size = this->map.cols;
+    //printf("map %d, %d\n", map_row_size, map_col_size);
 
     double x1_i = x1.x/this->res + this->map_origin_x;
     double x1_j = x1.y/this->res + this->map_origin_y;
@@ -374,48 +386,71 @@ bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
     double x2_j = x2.y/this->res + this->map_origin_y;
 
     double radius = L / tan(alpha);
-    //printf("radius : %.3f\n", radius);
+    //printf("alpha %.3f, radius : %.3f\n", alpha, radius);
     double beta = d / radius;
+    //printf("beta %.3f\n", beta);
 
     double theta = x1.th;
     double centerX = x1_i - radius * sin(theta) / this->res;
     double centerY = x1_j + radius * cos(theta) / this->res;
+    //printf("center : %.3f, %.3f\n", centerX, centerY);
     
     double angle_x1 = atan2( (x1_j - centerY) , (x1_i - centerX) );
     double angle_x2 = atan2( (x2_j - centerY) , (x2_i - centerX) );
     
-    double angle_x1_x2 = std::abs(angle_x1 - angle_x2);
+    double angle_x1_x2 = angle_x1 - angle_x2;
+    angle_x1_x2 = fmod(angle_x1_x2, 2*M_PI);
+    if (angle_x1_x2 > M_PI) {
+        angle_x1_x2 -= 2*M_PI;
+    }
+    else if (angle_x1_x2 < -M_PI) {
+        angle_x1_x2 += 2*M_PI;
+    }
 
-    double arc_length = angle_x1_x2 * radius;
-    int max_iter = std::ceil((int)arc_length);//-(int)(angle_x1_x2 / beta);
+    double arc_length = std::abs(angle_x1_x2 * radius / this->res);
+    //printf("arc_length %.3f\n", arc_length);
+    int max_iter = std::ceil(arc_length);
     //printf("max_iter : %d\n", max_iter);
 
     double newx = x1_i;
     double newy = x1_j; // start point
+    //printf("max_iter %d, x1 %.1f, %.1f, %.1f, %.1f, x2 %.1f, %.1f, %.1f, %.1f\n", max_iter, x1.x, x1.y, x1_i, x1_j, x2.x, x2.y, x2_i, x2_j);
+    //printf("col size : %d, row size : %d\n", map_col_size, map_row_size);
+
 
     for (int i = 1; i <= max_iter; i++) {
+        check_enterance = true;
 
+        //printf("be radius %.3f, theta %.3f\n", radius, theta);
         theta = theta + beta * (double)i / (double)max_iter;
+        //printf("af radius %.3f, theta %.3f\n", radius, theta);
 
         newx = MAX(0, MIN(map_col_size-1, centerX + radius * sin(theta) / this->res));
         newy = MAX(0, MIN(map_row_size-1, centerY - radius * cos(theta) / this->res));
+        //printf("%.3f, %.3f\n", map_row_size-1, centerY - radius * cos(theta) / this->res);
+        //printf("%d newx : %.1f, newy : %.1f\n", i, newx, newy);
         if (newx*newy == 0 || newx == map_col_size || newy == map_row_size) {
             return true;
         }
 
         //printf("collisioncheck %d, x, y : %.3f, %.3f\n", i, newx, newy);
-        int collisionInfo = this->map.at<uchar>((int)(newx), (int)(newy));
-        //printf("collision: %d\n", collisionInfo);
+        int collisionInfo = this->map.at<uchar>((int)(newx+0.5), (int)(newy+0.5));
+        //printf("newx %d, newy %d, collision: %d\n", (int)newx, (int)newy, collisionInfo);
 
-        if ((collisionInfo == 255) || (collisionInfo == 125)) { // occupied 
-        //if (this->map.at<uchar>((int)(newx+0.5), (int)(newy+0.5)) == 0 || this->map.at<uchar>((int)newx, (int)newy) == 125 ) { // occupied or unknown
-        // ***need add*** when 125, check around??
+        if (collisionInfo == 0) {// || (collisionInfo == 125)) { // occupied 
+            //printf("collision detected\n");
             return true; // means there is a collision : cannot move
         }
+        //printf("no collision\n");
 
     }
     //printf("collision\n");
-    return false;
+    if (!check_enterance) {
+        return true;
+    }
+    else {
+        return false;
+    }
 
 
 
@@ -456,6 +491,6 @@ std::vector<traj> rrtTree::backtracking_traj(){
         route.push_back(newTraj);    
         idx = this->ptrTable[idx]->idx_parent;
     }
-    printf("backtracking done\n");
+    //printf("backtracking done\n");
     return route;
 }
