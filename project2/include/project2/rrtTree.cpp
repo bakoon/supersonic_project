@@ -305,7 +305,9 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //TODO
     //printf("newstate\n");
    
-    const int max_try = 5;
+    const int max_try = 100;
+    double min_distance = DBL_MAX;
+    double new_d, new_alpha;
     point newPoint;
     point nearX;
     nearX.x = x_near.x;
@@ -319,6 +321,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 
     for (int i = 0; i < max_try; i++) {
         double alpha = (((double)rand()/(double)RAND_MAX) - 0.5) * 2 * max_alpha; // in [-max_alpha, max_alpha] 
+        double d = ((double)rand()/(double)RAND_MAX) * MaxStep;
 
         double radius = L / tan(alpha);
         double theta = x_near.th;
@@ -326,47 +329,35 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         double centerX = nearX.x - radius * sin(theta);
         double centerY = nearX.y + radius * cos(theta);
 
-        double xnear_from_center_x = centerX - nearX.x;
-        double xnear_from_center_y = centerY - nearX.y;
-        double xrand_from_center_x = centerX - randX.x;
-        double xrand_from_center_y = centerY - randX.y;
-
-        double x_err = xnear_from_center_x - xrand_from_center_x;
-        double y_err = xnear_from_center_y - xrand_from_center_y;
-
-        double angle_near_rand = atan2(y_err, x_err);
-        double arc_length = radius*angle_near_rand;
-        double beta;
-
-        if (arc_length > MaxStep) {
-            beta = 0.1 * angle_near_rand * MaxStep / (2*arc_length);
-            newPoint.x = centerX + radius * sin(theta + beta);
-            newPoint.y = centerY - radius * cos(theta + beta);
-        }
-        else {
-            beta = 0.1 * angle_near_rand;
-            newPoint.x = centerX + radius * sin(theta + beta);
-            newPoint.y = centerY - radius * cos(theta + beta);
-            //newPoint.x = randX.x;
-            //newPoint.y = randX.y;
-        }
-        double d = beta * radius;
+        double beta = d / radius;
         
-        //printf("%d bef collisioncheck\n", i);
-        bool collisionCheck = isCollision(nearX, newPoint, d, alpha);
-        //printf("%daft collisioncheck\n", i);
+        double newX = centerX + radius * sin(theta + beta);
+        double newY = centerY - radius * cos(theta + beta);
 
-        //bool collisionCheck = false;
+        double x_err = newPoint.x - x_rand.x;
+        double y_err = newPoint.y - x_rand.y;
 
-        if (!collisionCheck) {
-        
-            out[0] = newPoint.x;
-            out[1] = newPoint.y;
-            out[2] = atan2(centerX-out[0], centerY-out[1]);
-            out[3] = alpha;
-            out[4] = d;
-            return 0;
+        double distance = x_err * x_err + y_err * y_err;
+        if (distance < min_distance) {
+            min_distance = distance;
+            newPoint.x = newX;
+            newPoint.y = newY;
+            new_d = d;
+            new_alpha = alpha;
         }
+    }
+        
+    //printf("%d bef collisioncheck\n", i);
+    bool collisionCheck = isCollision(nearX, newPoint, new_d, new_alpha);
+    //printf("%daft collisioncheck\n", i);
+
+    if (!collisionCheck) {
+        out[0] = newPoint.x;
+        out[1] = newPoint.y;
+        out[2] = atan2((newPoint.y - randX.y), (newPoint.x - randX.x));
+        out[3] = new_alpha;
+        out[4] = new_d;
+        return 0;
     }
     return 1;
 }
@@ -426,45 +417,7 @@ bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
     //printf("collision\n");
     return true;
 
-/*	
-	    double distance_arrived = (L/this->res) * (L/this->res);
 
-    double x1_i = x1.x/this->res + this->map_origin_x;
-    double x1_j = x1.y/this->res + this->map_origin_y;
-    double x2_i = x2.x/this->res + this->map_origin_x;
-    double x2_j = x2.y/this->res + this->map_origin_y;
-
-    //double radius = L / std::abs(tan(alpha));
-    //is this value not supposed to be abs?
-    double radius = L / tan(alpha);
-    double beta = d / radius;
-
-    double theta = x1.th;
-    double centerX = x1_i - radius * sin(theta)/this->res;
-    double centerY = x1_j + radius * cos(theta)/this->res;
-    
-    //number of steps calculated from the position x2 and x1.
-    int max_iter = (int)(std::abs(x2_i - x1_i)+0.5) + (int)(std::abs(x2_j - x1_j) + 0.5) - 1;
-    double newx, newy;
-
-    for(int i = 0; i < max_iter; ++i){
-	//newly calculated theta btw x1.theta and x2.theta
-	theta = x1.th * (double)(max_iter - i)/max_iter + x2.th * (double)i/max_iter;
-        newx = centerX + radius * sin(theta)/this->res;
-	newy = centerY - radius * cos(theta)/this->res;
-        if (this->map.at<uchar>((int)(newx+0.5), (int)(newy+0.5)) == 255) { // occupied 
-           return true; // means there is a collision : cannot move
-        }else if(this->map.at<uchar>((int)(newx+0.5), (int)(newy+0.5)) == 125){ // don't know
-		if((this->map.at<uchar>((int)(newx+1.5), (int)(newy+0.5)) == 255) ||
-		(this->map.at<uchar>((int)(newx-0.5), (int)(newy+0.5)) == 255)||
-		(this->map.at<uchar>((int)(newx+0.5), (int)(newy+1.5)) == 255)||
-		(this->map.at<uchar>((int)(newx+0.5), (int)(newy-0.5)) == 255))
-			return true;//means regions surrounding don't know are occupied.
-
-	}
-   }
-    return false;
-*/
 
 }
 
