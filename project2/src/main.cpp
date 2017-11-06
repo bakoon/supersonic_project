@@ -245,6 +245,7 @@ void generate_path_RRT()
 		for (int j = this_traj.size()-1; j >= 0; j--) {
 			path_RRT.push_back(this_traj[j]);
 		}
+	thisTree.visualizeTree();
     }
 }
 
