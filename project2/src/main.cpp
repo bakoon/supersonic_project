@@ -16,6 +16,7 @@
 #include <project2/pid.h>
 #include <math.h>
 #include <pwd.h>
+#include <time.h>
 
 //map spec
 cv::Mat map;
@@ -282,6 +283,8 @@ void generate_path_RRT()
      * 4.  when you store path, you have to reverse the order of points in the generated path since BACKTRACKING makes a path in a reverse order (goal -> start).
      * 5. end
     */
+
+    srand((int)time(NULL));
     traj start_traj;
     start_traj.x = waypoints[0].x;
     start_traj.y = waypoints[0].y;
@@ -303,7 +306,7 @@ void generate_path_RRT()
             path_RRT.push_back(this_traj[j]);
         }
         printf("visualize\n");
-        thisTree.visualizeTree(path_RRT);
+        //thisTree.visualizeTree(path_RRT);
         printf("visualize done %d / %d\n", i, waypoints.size()-1);
     }
     printf("generate_path_RRT end\n");

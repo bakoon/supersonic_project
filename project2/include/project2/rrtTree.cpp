@@ -6,7 +6,7 @@
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))  
 #include <cmath>
 
-double max_alpha = 0.15;
+double max_alpha = 0.2;
 double L = 0.325;
 
 rrtTree::rrtTree() {
@@ -212,7 +212,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
             if (getNewState == 0) {
                 count++;
                 bool_goal_bias = true;
-                printf("RRT node # %d, %.3f, %.3f, %.3f\n", count, out[0], out[1], out[2]);
+                //printf("RRT node # %d, %.3f, %.3f, %.3f\n", count, out[0], out[1], out[2]);
                 point newVertex;
                 newVertex.x = out[0];
                 newVertex.y = out[1];
@@ -315,7 +315,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
    
     const int max_try = 100;
     double min_distance = DBL_MAX;
-    double new_d, new_alpha;
+    double new_d, new_alpha, new_beta;
     point newPoint;
     point nearX;
     nearX.x = x_near.x;
@@ -330,6 +330,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     for (int i = 0; i < max_try; i++) {
         double alpha = (((double)rand()/(double)RAND_MAX) - 0.5) * 2 * max_alpha; // in [-max_alpha, max_alpha] 
         double d = ((double)rand()/(double)RAND_MAX) * MaxStep;
+        //int max_iter = (int)(MaxStep / d);
 
         double radius = L / tan(alpha);
         double theta = x_near.th;
@@ -338,6 +339,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         double centerY = nearX.y + radius * cos(theta);
 
         double beta = d / radius;
+        //beta = beta * max_iter;
         
         double newX = centerX + radius * sin(theta + beta);
         double newY = centerY - radius * cos(theta + beta);
@@ -352,6 +354,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
             newPoint.y = newY;
             new_d = d;
             new_alpha = alpha;
+            new_beta = beta;
         }
     }
         
@@ -363,7 +366,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         out[0] = newPoint.x;
         out[1] = newPoint.y;
         //out[2] = atan2((newPoint.y - randX.y), (newPoint.x - randX.x));
-        out[2] = x_near.th + new_alpha;
+        out[2] = x_near.th + new_beta;//new_alpha;
         out[3] = new_alpha;
         out[4] = new_d;
         return 0;

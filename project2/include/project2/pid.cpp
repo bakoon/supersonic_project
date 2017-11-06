@@ -59,8 +59,8 @@ float PID::get_control(point car_pose, traj prev_goal, traj cur_goal) {
 
     //weight_g = MIN(distance, 2.0)/2.2;
     //weight_d = 1 - weight_g;
-    weight_g = 1;//0.95;
-    weight_d = 0;//0.05;
+    weight_g = 0.95;
+    weight_d = 0.05;
 
     if (x_err < 0 ) {
         if (y_err > 0) {
