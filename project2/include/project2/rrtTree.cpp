@@ -365,14 +365,8 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
     //TODO
 
-    //double deltaT = 0.015;
-    //double speed = 2.0;
-    // d = deltaT * speed;
-    const double map_max = 400;
-
-    //printf("x1 %.3f, %.3f, x2 %.3f, %.3f\n", x1.x, x1.y, x2.x, x2.y);
-
-    double distance_arrived = (L/this->res) * (L/this->res);
+    double map_row_size = this->map.rows; // size info;
+    double map_col_size = this->map.cols;
 
     double x1_i = x1.x/this->res + this->map_origin_x;
     double x1_j = x1.y/this->res + this->map_origin_y;
@@ -387,35 +381,41 @@ bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
     double centerX = x1_i - radius * sin(theta) / this->res;
     double centerY = x1_j + radius * cos(theta) / this->res;
     
-    double angle_x1_x2 = atan2( (x1_j - x2_j), (x1_i - x2_i) );
-    int max_iter = 10;//-(int)(angle_x1_x2 / beta);
+    double angle_x1 = atan2( (x1_j - centerY) , (x1_i - centerX) );
+    double angle_x2 = atan2( (x2_j - centerY) , (x2_i - centerX) );
+    
+    double angle_x1_x2 = std::abs(angle_x1 - angle_x2);
+
+    double arc_length = angle_x1_x2 * radius;
+    int max_iter = std::ceil((int)arc_length);//-(int)(angle_x1_x2 / beta);
     //printf("max_iter : %d\n", max_iter);
 
     double newx = x1_i;
-    double newy = x1_j;
+    double newy = x1_j; // start point
 
     for (int i = 1; i <= max_iter; i++) {
 
-        newx = MAX(0, MIN(map_max, centerX + radius * sin(theta + beta * 0.1 * i) / this->res));
-        newy = MAX(0, MIN(map_max, centerY - radius * cos(theta) / this->res));
-        if (newx*newy == 0 || newx == map_max || newy == map_max) {
-            return false;
+        theta = theta + beta * (double)i / (double)max_iter;
+
+        newx = MAX(0, MIN(map_col_size-1, centerX + radius * sin(theta) / this->res));
+        newy = MAX(0, MIN(map_row_size-1, centerY - radius * cos(theta) / this->res));
+        if (newx*newy == 0 || newx == map_col_size || newy == map_row_size) {
+            return true;
         }
 
         //printf("collisioncheck %d, x, y : %.3f, %.3f\n", i, newx, newy);
-
         int collisionInfo = this->map.at<uchar>((int)(newx), (int)(newy));
         //printf("collision: %d\n", collisionInfo);
 
-        if (collisionInfo == 0) { // || collisionInfo == 125) { // occupied 
+        if ((collisionInfo == 255) || (collisionInfo == 125)) { // occupied 
         //if (this->map.at<uchar>((int)(newx+0.5), (int)(newy+0.5)) == 0 || this->map.at<uchar>((int)newx, (int)newy) == 125 ) { // occupied or unknown
         // ***need add*** when 125, check around??
-            return false; // means there is a collision : cannot move
+            return true; // means there is a collision : cannot move
         }
 
     }
     //printf("collision\n");
-    return true;
+    return false;
 
 
 
