@@ -79,7 +79,7 @@ float PID::get_control(point car_pose, point goal_pose){
     this->error_sum *= 0.9;
     this->error_sum += th_err;
 
-    printf("theta_goal : %.2f, theta error : %.2f, ctrl : %.2f\n", th_goal, th_err, ctrl);
+    //printf("theta_goal : %.2f, theta error : %.2f, ctrl : %.2f\n", th_goal, th_err, ctrl);
     
     return ctrl;
     

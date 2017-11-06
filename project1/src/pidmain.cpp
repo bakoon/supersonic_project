@@ -142,9 +142,9 @@ int main(int argc, char** argv){
          * 4. check whether car reached final way point(end of path). if it is, terminate controller.
         */
       
-        printf("goal pose : %.2f,%.2f,%.2f \n", path[current_goal].x, path[current_goal].y, path[current_goal].th);
-        printf("car pose : %.2f,%.2f,%.2f \n", car_pose.x, car_pose.y, car_pose.th);
-        printf("distance : %.2f\n", distance);
+        //printf("goal pose : %.2f,%.2f,%.2f \n", path[current_goal].x, path[current_goal].y, path[current_goal].th);
+        //printf("car pose : %.2f,%.2f,%.2f \n", car_pose.x, car_pose.y, car_pose.th);
+        //printf("distance : %.2f\n", distance);
 
         float ctrl;
         ctrl = pid_ctrl.get_control(car_pose, path[current_goal]);
@@ -168,7 +168,7 @@ int main(int argc, char** argv){
 
         if (distance < distance_check_arrive) {
             current_goal += 1;
-            printf("arrived, next point %.2f, %.2f\n", path[current_goal].x, path[current_goal].y);
+            //printf("arrived, next point %.2f, %.2f\n", path[current_goal].x, path[current_goal].y);
             pid_ctrl.reset();
             if (current_goal == path.size()) {
                 break;
@@ -189,13 +189,13 @@ int main(int argc, char** argv){
             }
         }
 
-        printf("speed : %.2f\n", drive_msg_stamped.drive.speed);
+        //printf("speed : %.2f\n", drive_msg_stamped.drive.speed);
         
         car_ctrl_pub.publish(drive_msg_stamped);
 
         ros::spinOnce();
         control_rate.sleep();
-        printf("\n");
+        //printf("\n");
     }
 
     return 0;
