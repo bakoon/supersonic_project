@@ -238,15 +238,22 @@ int main(int argc, char** argv){
         case RUNNING: {
 			// TO DO
 			PID pid_ctrl;
+            const double max_ctrl = 0.2;
 			while(ros::ok()) {
 				traj cur_goal = path_RRT[look_ahead_idx];
 				double ctrl = pid_ctrl.get_control(robot_pose, cur_goal, cur_goal);
+                if (ctrl > 0) {
+                    ctrl = MIN(0.3, ctrl);
+                }
+                else {
+                    ctrl = MAX(-0.3, ctrl);
+                }
                 //printf("car pose %.3f, %.3f, cur goal %.3f, %.3f, ctrl %.3f\n", robot_pose.x, robot_pose.y, cur_goal.x, cur_goal.y, ctrl);
-				cmd.drive.speed = MAX(2.0, MIN(3.0, 1.0/ctrl));//;
+				cmd.drive.speed = 1.0;//MAX(2.0, MIN(3.0, 1.0/ctrl));//;
 				cmd.drive.steering_angle += ctrl; //pid~'
 				cmd_vel_pub.publish(cmd);
 				// TO DO
-				const double distance_check = 0.2 * 0.2;
+				const double distance_check = 0.3 * 0.3;
 			    double x_err = robot_pose.x - cur_goal.x;
                 double y_err = robot_pose.y - cur_goal.y;
                 double distance = x_err * x_err + y_err + y_err;

@@ -7,10 +7,10 @@
 
 PID::PID(){
     //initialize
-    this->Kp = 0.030;
-    this->Ki = 0.005;
-    this->Kd = 0.080;
-    this->delta_t = 0.1;
+    this->Kp = 0.01;
+    this->Ki = 0.10;
+    this->Kd = 0.45;
+    this->delta_t = 1. / 60.;
     this->error = 0;
     this->error_sum = 0;
 }
@@ -35,6 +35,8 @@ PID::PID(){
 float PID::get_control(point car_pose, traj prev_goal, traj cur_goal) {
     //TODO
     ////why is there prev_goal?
+
+    const double scaling_factor = 1;
 
     float weight_g, weight_d;
 
@@ -87,14 +89,14 @@ float PID::get_control(point car_pose, traj prev_goal, traj cur_goal) {
     integral_term = this->Ki * this->delta_t * (this->error_sum);// + th_err);
     derivative_term = (this->Kd / this->delta_t) * (th_err - this->error);
 
-    ctrl = error_term + integral_term + derivative_term;
+    ctrl = scaling_factor * (error_term + integral_term + derivative_term);
     //ctrl = fmod(ctrl, 2*M_PI);
     //update values
     this->error = th_err;
     this->error_sum *= 0.9;
     this->error_sum += th_err;
 
-    //printf("theta_goal : %.2f, theta error : %.2f, ctrl : %.2f\n", th_goal, th_err, ctrl);
+    printf("errer term %.2f, integral term %.2f, derivative term %.2f\n car theta : %.2f, theta_goal : %.2f, theta error : %.2f, ctrl : %.2f\n", error_term, integral_term, derivative_term, car_pose.th, th_goal, th_err, ctrl);
 
     return ctrl;
 
