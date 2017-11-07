@@ -6,7 +6,7 @@
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))  
 #include <cmath>
 
-double max_alpha = 0.2;
+double max_alpha = 0.15;
 double L = 0.325;
 
 rrtTree::rrtTree() {
@@ -339,8 +339,10 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 
     for (int i = 0; i < max_try; i++) {
         double alpha = (((double)rand()/(double)RAND_MAX) - 0.5) * 2 * max_alpha; // in [-max_alpha, max_alpha] 
-        //double d = ((double)rand()/(double)RAND_MAX) * MaxStep;
-        double d = MaxStep;
+        //double random_number = ((double)rand()/(double)RAND_MAX) * 2;
+        //double d = MIN(random_number * MaxStep, MaxStep);
+        //double d = MaxStep;
+        double d = (double)(rand()%MaxStep+1);
         //printf("alpha %.3f, d %.3f\n", alpha, d);
         //int max_iter = (int)(MaxStep / d);
 
@@ -376,22 +378,26 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //printf("%daft collisioncheck\n", i);
 
     if (!collisionCheck) {
+        //printf("accept\n");
         out[0] = newPoint.x;
         out[1] = newPoint.y;
         //out[2] = atan2(-(newPoint.y - randX.y), (newPoint.x - randX.x));
         double out_th = x_near.th + new_beta;
         out_th = fmod(out_th, 2*M_PI);
+        //printf("th test %.3f ", out_th);
         if (out_th > M_PI) {
-            out_th - 2*M_PI;
+            out_th -= 2*M_PI;
         }
         else if (out_th < -M_PI) {
-            out_th + 2*M_PI;
+            out_th += 2*M_PI;
         }
+        //printf("new theta %.3f\n", out_th);
         out[2] = out_th; 
         out[3] = new_alpha;
         out[4] = new_d;
         return 0;
     }
+    //printf("collision\n");
     return 1;
 }
 
