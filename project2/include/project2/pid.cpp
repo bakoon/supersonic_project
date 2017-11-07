@@ -7,9 +7,9 @@
 
 PID::PID(){
     //initialize
-    this->Kp = 0.01;
+    this->Kp = 0.05;
     this->Ki = 0.10;
-    this->Kd = 0.45;
+    this->Kd = 0.25;
     this->delta_t = 1. / 60.;
     this->error = 0;
     this->error_sum = 0;
@@ -61,8 +61,8 @@ float PID::get_control(point car_pose, traj prev_goal, traj cur_goal) {
 
     //weight_g = MIN(distance, 2.0)/2.2;
     //weight_d = 1 - weight_g;
-    weight_g = 0.95;
-    weight_d = 0.05;
+    weight_g = 0.9;
+    weight_d = 0.1;
 
     if (x_err < 0 ) {
         if (y_err > 0) {
@@ -93,7 +93,7 @@ float PID::get_control(point car_pose, traj prev_goal, traj cur_goal) {
     //ctrl = fmod(ctrl, 2*M_PI);
     //update values
     this->error = th_err;
-    this->error_sum *= 0.9;
+    this->error_sum *= 0.85;
     this->error_sum += th_err;
 
     printf("errer term %.2f, integral term %.2f, derivative term %.2f\n car theta : %.2f, theta_goal : %.2f, theta error : %.2f, ctrl : %.2f\n", error_term, integral_term, derivative_term, car_pose.th, th_goal, th_err, ctrl);

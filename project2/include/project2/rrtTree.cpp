@@ -6,7 +6,7 @@
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))  
 #include <cmath>
 
-double max_alpha = 0.15;
+double max_alpha = 0.2;
 double L = 0.325;
 
 rrtTree::rrtTree() {
@@ -193,10 +193,10 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     while (count < max_route) {
         point randVertex;
         if (bool_goal_bias && count % goal_bias == 0) {
-            printf("bias\n");
+            //printf("bias\n");
             randVertex.x = x_goal.x;
             randVertex.y = x_goal.y;
-            randVertex.th = x_goal.th;
+            //randVertex.th = x_goal.th;
             bool_goal_bias = false;
         }
         else {
@@ -323,7 +323,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //TODO
     //printf("newstate\n");
    
-    const int max_try = 1000;
+    const int max_try = 5000;
     double min_distance = DBL_MAX;
     double new_d, new_alpha, new_beta;
     point newPoint;
@@ -339,7 +339,8 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
 
     for (int i = 0; i < max_try; i++) {
         double alpha = (((double)rand()/(double)RAND_MAX) - 0.5) * 2 * max_alpha; // in [-max_alpha, max_alpha] 
-        double d = ((double)rand()/(double)RAND_MAX) * MaxStep;
+        //double d = ((double)rand()/(double)RAND_MAX) * MaxStep;
+        double d = MaxStep;
         //printf("alpha %.3f, d %.3f\n", alpha, d);
         //int max_iter = (int)(MaxStep / d);
 
@@ -359,7 +360,8 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         double y_err = newPoint.y - x_rand.y;
 
         double distance = x_err * x_err + y_err * y_err;
-        if (distance < min_distance) {
+        //if (distance < min_distance) {
+        if (distance < min_distance && distance > L * L) {
             min_distance = distance;
             newPoint.x = newX;
             newPoint.y = newY;
@@ -377,7 +379,15 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         out[0] = newPoint.x;
         out[1] = newPoint.y;
         //out[2] = atan2(-(newPoint.y - randX.y), (newPoint.x - randX.x));
-        out[2] = x_near.th + new_beta;//new_alpha;
+        double out_th = x_near.th + new_beta;
+        out_th = fmod(out_th, 2*M_PI);
+        if (out_th > M_PI) {
+            out_th - 2*M_PI;
+        }
+        else if (out_th < -M_PI) {
+            out_th + 2*M_PI;
+        }
+        out[2] = out_th; 
         out[3] = new_alpha;
         out[4] = new_d;
         return 0;
@@ -493,6 +503,8 @@ std::vector<traj> rrtTree::backtracking_traj(){
     newTraj.d = this->ptrTable[idx]->d;
     newTraj.alpha = 0;//this->ptrTable[idx]->alpha;
     route.push_back(newTraj);
+    
+    idx = this->ptrTable[idx]->idx_parent; // ignore the final point : near goal
 
     while(idx != NULL) {
         //printf("backtracking idx %d\n", idx);

@@ -243,28 +243,34 @@ int main(int argc, char** argv){
 				traj cur_goal = path_RRT[look_ahead_idx];
 				double ctrl = pid_ctrl.get_control(robot_pose, cur_goal, cur_goal);
                 if (ctrl > 0) {
-                    ctrl = MIN(0.3, ctrl);
+                    ctrl = MIN(max_ctrl, ctrl);
                 }
                 else {
-                    ctrl = MAX(-0.3, ctrl);
+                    ctrl = MAX(-max_ctrl, ctrl);
                 }
                 //printf("car pose %.3f, %.3f, cur goal %.3f, %.3f, ctrl %.3f\n", robot_pose.x, robot_pose.y, cur_goal.x, cur_goal.y, ctrl);
-				cmd.drive.speed = 1.0;//MAX(2.0, MIN(3.0, 1.0/ctrl));//;
+				cmd.drive.speed = 1.5;//MAX(2.0, MIN(3.0, 1.0/ctrl));//;
 				cmd.drive.steering_angle += ctrl; //pid~'
 				cmd_vel_pub.publish(cmd);
 				// TO DO
-				const double distance_check = 0.3 * 0.3;
+				const double distance_check = 0.3;
 			    double x_err = robot_pose.x - cur_goal.x;
                 double y_err = robot_pose.y - cur_goal.y;
                 double distance = x_err * x_err + y_err + y_err;
-                if (distance < distance_check) {
+                if (distance < distance_check * distance_check) {
+                    printf("arrived %d\n", look_ahead_idx);
                     look_ahead_idx++;
+                    printf("new point %.3f, %.3f, %.3f\n", cur_goal.x, cur_goal.y, cur_goal.th);
                     pid_ctrl.reset();
+                }
+                if (look_ahead_idx == path_RRT.size()) {
+                    state == FINISH;
                 }
 
 				ros::spinOnce();
 				control_rate.sleep();
 			}
+
         } break;
 
         case FINISH: {
@@ -293,11 +299,11 @@ void generate_path_RRT()
     */
 
     srand((int)time(NULL));
-    traj start_traj;
-    start_traj.x = waypoints[0].x;
-    start_traj.y = waypoints[0].y;
-    start_traj.th = waypoints[0].th;
-    path_RRT.push_back(start_traj);
+    //traj start_traj;
+    //start_traj.x = waypoints[0].x;
+    //start_traj.y = waypoints[0].y;
+    //start_traj.th = waypoints[0].th;
+    //path_RRT.push_back(start_traj);
     //rrtTree *thisTree = NULL;
 
     printf("waypoint size : %d\n", waypoints.size());
@@ -306,8 +312,8 @@ void generate_path_RRT()
     rrtTree thisTree;
     traj lastPoint;
 
-    //for (int i = 1; i < waypoints.size()-1; i++) {
     for (int i = 1; i < waypoints.size(); i++) {
+    //for (int i = 1; i < waypoints.size(); i++) {
         x_goal = waypoints[i];
         printf("generateRRT %d / %d\n", i, waypoints.size()-1);
         thisTree = rrtTree(x_init, x_goal, map, map_origin_x, map_origin_y, res, margin);
@@ -322,9 +328,9 @@ void generate_path_RRT()
         x_init.x = lastPoint.x;
         x_init.y = lastPoint.y;
         x_init.th = lastPoint.th;
-        printf("visualize\n");
-        thisTree.visualizeTree(path_RRT);
     }
+    printf("visualize\n");
+    thisTree.visualizeTree(path_RRT);
     //rrtTree temp;
     printf("generate_path_RRT end\n");
     /*
