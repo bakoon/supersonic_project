@@ -7,7 +7,7 @@
 
 PID::PID(){
     //initialize
-    this->Kp = 0.015;
+    this->Kp = 0.030;
     this->Ki = 0.005;
     this->Kd = 0.080;
     this->delta_t = 0.1;

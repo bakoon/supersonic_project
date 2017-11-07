@@ -241,6 +241,7 @@ int main(int argc, char** argv){
 			while(ros::ok()) {
 				traj cur_goal = path_RRT[look_ahead_idx];
 				double ctrl = pid_ctrl.get_control(robot_pose, cur_goal, cur_goal);
+                //printf("car pose %.3f, %.3f, cur goal %.3f, %.3f, ctrl %.3f\n", robot_pose.x, robot_pose.y, cur_goal.x, cur_goal.y, ctrl);
 				cmd.drive.speed = MAX(2.0, MIN(3.0, 1.0/ctrl));//;
 				cmd.drive.steering_angle += ctrl; //pid~'
 				cmd_vel_pub.publish(cmd);
@@ -293,26 +294,37 @@ void generate_path_RRT()
     //rrtTree *thisTree = NULL;
 
     printf("waypoint size : %d\n", waypoints.size());
+    point x_init = waypoints[0];
+    point x_goal;
+    rrtTree thisTree;
+    traj lastPoint;
+
+    //for (int i = 1; i < waypoints.size()-1; i++) {
     for (int i = 1; i < waypoints.size(); i++) {
+        x_goal = waypoints[i];
         printf("generateRRT %d / %d\n", i, waypoints.size()-1);
-        point x_init = waypoints[i-1];
-        point x_goal = waypoints[i];
-        rrtTree thisTree = rrtTree(x_init, x_goal, map, map_origin_x, map_origin_y, res, margin);
+        thisTree = rrtTree(x_init, x_goal, map, map_origin_x, map_origin_y, res, margin);
         thisTree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
         std::vector<traj> this_traj = thisTree.backtracking_traj();
 
-        for (int j = this_traj.size()-1; j >= 0; j--) {
+        for (int j = this_traj.size()-1; j > 0; j--) {
             //printf("j %d\n", j);
             path_RRT.push_back(this_traj[j]);
         }
+        lastPoint = this_traj[0];
+        x_init.x = lastPoint.x;
+        x_init.y = lastPoint.y;
+        x_init.th = lastPoint.th;
         printf("visualize\n");
-        //thisTree.visualizeTree(path_RRT);
-        printf("visualize done %d / %d\n", i, waypoints.size()-1);
+        thisTree.visualizeTree(path_RRT);
     }
+    //rrtTree temp;
     printf("generate_path_RRT end\n");
+    /*
     for (int i = 0; i < path_RRT.size(); i++) {
         printf("%d, %.3f, %.3f, %.3f\n",path_RRT[i].x, path_RRT[i].y, path_RRT[i].th);
     }
+    */
 
 }
 
