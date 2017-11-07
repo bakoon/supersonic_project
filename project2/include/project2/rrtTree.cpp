@@ -323,7 +323,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //TODO
     //printf("newstate\n");
    
-    const int max_try = 5000;
+    const int max_try = 100;//5000;
     double min_distance = DBL_MAX;
     double new_d, new_alpha, new_beta;
     point newPoint;
@@ -359,24 +359,24 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         double newX = centerX + radius * sin(theta + beta);
         double newY = centerY - radius * cos(theta + beta);
 
-        double x_err = newX - x_rand.x;
-        double y_err = newY - x_rand.y;
-        //double x_err = newPoint.x - x_rand.x;
-        //double y_err = newPoint.y - x_rand.y;
+        //double x_err = newX - x_rand.x;
+        //double y_err = newY - x_rand.y;
+        double x_err = newPoint.x - x_rand.x;
+        double y_err = newPoint.y - x_rand.y;
 
         double distance = x_err * x_err + y_err * y_err;
         //if (distance < min_distance) {
-        if (distance < min_distance) {
+        if (distance < min_distance && distance > L * L) {
             min_distance = distance;
             newPoint.x = newX;
             newPoint.y = newY;
             new_d = d;
             new_alpha = alpha;
             new_beta = beta;
-            if ( distance < L * L ) {
+            //if ( distance < 2 * L * L ) {
                 //printf("break\n");
-                break;
-            }
+            //    break;
+            //}
         }
     }
         
