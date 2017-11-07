@@ -213,7 +213,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
             if (getNewState == 0) {
                 count++;
                 bool_goal_bias = true;
-                printf("RRT node # %d, %.3f, %.3f, %.3f\n", count, out[0], out[1], out[2]);
+                //printf("RRT node # %d, %.3f, %.3f, %.3f\n", count, out[0], out[1], out[2]);
                 point newVertex;
                 newVertex.x = out[0];
                 newVertex.y = out[1];
@@ -342,7 +342,8 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         //double random_number = ((double)rand()/(double)RAND_MAX) * 2;
         //double d = MIN(random_number * MaxStep, MaxStep);
         //double d = MaxStep;
-        double d = (double)(rand()%MaxStep+1);
+        const int stepSize = 10;
+        double d = (double)(rand()%stepSize + 1) / (double)stepSize * MaxStep;
         //printf("alpha %.3f, d %.3f\n", alpha, d);
         //int max_iter = (int)(MaxStep / d);
 

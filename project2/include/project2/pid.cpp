@@ -7,9 +7,9 @@
 
 PID::PID(){
     //initialize
-    this->Kp = 0.05;
-    this->Ki = 0.10;
-    this->Kd = 0.25;
+    this->Kp = 0.1;
+    this->Ki = 0.05;
+    this->Kd = 0.60;
     this->delta_t = 1. / 60.;
     this->error = 0;
     this->error_sum = 0;
@@ -96,7 +96,7 @@ float PID::get_control(point car_pose, traj prev_goal, traj cur_goal) {
     this->error_sum *= 0.85;
     this->error_sum += th_err;
 
-    printf("errer term %.2f, integral term %.2f, derivative term %.2f\n car theta : %.2f, theta_goal : %.2f, theta error : %.2f, ctrl : %.2f\n", error_term, integral_term, derivative_term, car_pose.th, th_goal, th_err, ctrl);
+    //printf("errer term %.2f, integral term %.2f, derivative term %.2f\n car theta : %.2f, theta_goal : %.2f, theta error : %.2f, ctrl : %.2f\n", error_term, integral_term, derivative_term, car_pose.th, th_goal, th_err, ctrl);
 
     return ctrl;
 

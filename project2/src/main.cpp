@@ -257,9 +257,11 @@ int main(int argc, char** argv){
 			    double x_err = robot_pose.x - cur_goal.x;
                 double y_err = robot_pose.y - cur_goal.y;
                 double distance = x_err * x_err + y_err + y_err;
+                //printf("distance %.3f\n", distance);
                 if (distance < distance_check * distance_check) {
                     printf("arrived %d\n", look_ahead_idx);
                     look_ahead_idx++;
+				    traj cur_goal = path_RRT[look_ahead_idx];
                     printf("new point %.3f, %.3f, %.3f\n", cur_goal.x, cur_goal.y, cur_goal.th);
                     pid_ctrl.reset();
                 }
@@ -299,12 +301,11 @@ void generate_path_RRT()
     */
 
     srand((int)time(NULL));
-    //traj start_traj;
-    //start_traj.x = waypoints[0].x;
-    //start_traj.y = waypoints[0].y;
-    //start_traj.th = waypoints[0].th;
-    //path_RRT.push_back(start_traj);
-    //rrtTree *thisTree = NULL;
+    traj start_traj;
+    start_traj.x = waypoints[0].x;
+    start_traj.y = waypoints[0].y;
+    start_traj.th = waypoints[0].th;
+    path_RRT.push_back(start_traj);
 
     printf("waypoint size : %d\n", waypoints.size());
     point x_init = waypoints[0];
@@ -320,8 +321,7 @@ void generate_path_RRT()
         thisTree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
         std::vector<traj> this_traj = thisTree.backtracking_traj();
 
-        for (int j = this_traj.size()-1; j > 0; j--) {
-            //printf("j %d\n", j);
+        for (int j = this_traj.size()-1; j >= 0; j--) {
             path_RRT.push_back(this_traj[j]);
         }
         lastPoint = this_traj[0];
