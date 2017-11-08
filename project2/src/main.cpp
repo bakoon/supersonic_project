@@ -16,6 +16,7 @@
 #include <project2/pid.h>
 #include <math.h>
 #include <pwd.h>
+#include <time.h>
 
 //map spec
 cv::Mat map;
@@ -29,8 +30,7 @@ double world_x_max;
 double world_y_min;
 double world_y_max;
 
-
-//parameters you should adjust : K, margin, MaxStep
+//parameters we should adjust : K, margin, MaxStep
 int margin = 15;
 int K = 1500;
 double MaxStep = 4;
@@ -48,6 +48,7 @@ std::vector<traj> path_RRT;
 //robot
 point robot_pose;
 ackermann_msgs::AckermannDriveStamped cmd;
+gazebo_msgs::ModelStatesConstPtr model_states;
 
 //FSM state
 int state;
@@ -71,9 +72,10 @@ int main(int argc, char** argv){
 
     // Load Map
 
+    //char* user = getlogin();
     char* user = getpwuid(getuid())->pw_name;
-    map = cv::imread((std::string("/home/") +
-		      std::string(user) + 
+ 
+    map = cv::imread((std::string("/home/")+ std::string(user) + 
                       std::string("/catkin_ws/src/project2/src/ground_truth_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 
     map_y_range = map.cols;
@@ -114,9 +116,43 @@ int main(int argc, char** argv){
             look_ahead_idx = 0;
 	    printf("path size : %d\n", path_RRT.size());
             //visualize path
-	
+	    ros::spinOnce();
             for(int i = 0; i < path_RRT.size(); i++){
-		
+		for(int j = 0; j < model_states->name.size(); j++){
+                    std::ostringstream ball_name;
+                    ball_name << i;
+            	    if(std::strcmp(model_states->name[j].c_str(), ball_name.str().c_str()) == 0){
+                        //initialize robot position
+                        geometry_msgs::Pose model_pose;
+                        model_pose.position.x = path_RRT[i].x;
+                        model_pose.position.y = path_RRT[i].y;
+                        model_pose.position.z = 0.7;
+                        model_pose.orientation.x = 0.0;
+                        model_pose.orientation.y = 0.0;
+                        model_pose.orientation.z = 0.0;
+                        model_pose.orientation.w = 1.0;
+
+                        geometry_msgs::Twist model_twist;
+                        model_twist.linear.x = 0.0;
+                        model_twist.linear.y = 0.0;
+                        model_twist.linear.z = 0.0;
+                        model_twist.angular.x = 0.0;
+                        model_twist.angular.y = 0.0;
+                        model_twist.angular.z = 0.0;
+
+                        gazebo_msgs::ModelState modelstate;
+                        modelstate.model_name = ball_name.str();
+                        modelstate.reference_frame = "world";
+                        modelstate.pose = model_pose;
+                        modelstate.twist = model_twist;
+
+                        gazebo_msgs::SetModelState setmodelstate;
+                        setmodelstate.request.model_state = modelstate;
+
+                        gazebo_set.call(setmodelstate);
+                        continue;
+                    }
+    		}
 	    
                 gazebo_msgs::SpawnModel model;
                 model.request.model_xml = std::string("<robot name=\"simple_ball\">") +
@@ -199,21 +235,47 @@ int main(int argc, char** argv){
             state = RUNNING;
         } break;
 
-        case RUNNING: {
-	    //TODO
-	    /*
-		1. make control following point in the variable "path_RRT"
-			use function setcmdvel(double v, double w) which set cmd_vel as desired input value.
-		2. publish
-		3. check distance between robot and current goal point
-		4. if distance is less than 0.2 (update next goal point) (you can change the distance if you want)
-			look_ahead_idx++
-		5. if robot reach the final goal
-			finish RUNNING (state = FINISH)
-	    */
+	case RUNNING: {
+	      // TO DO
+	      PID pid_ctrl;
+	      const double max_ctrl = 0.8;
+	      while(ros::ok()) {
+		      traj cur_goal = path_RRT[look_ahead_idx];
+		      double ctrl = pid_ctrl.get_control(robot_pose, cur_goal, cur_goal);
+		      if (ctrl > 0) {
+			      ctrl = MIN(max_ctrl, ctrl);
+		      }
+		      else {
+			      ctrl = MAX(-max_ctrl, ctrl);
+		      }
+		      //printf("car pose %.3f, %.3f, cur goal %.3f, %.3f, ctrl %.3f\n", robot_pose.x, robot_pose.y, cur_goal.x, cur_goal.y, ctrl);
+		      cmd.drive.speed = 2.0;
+		      cmd.drive.steering_angle = ctrl; //pid~'
+		      cmd_vel_pub.publish(cmd);
+		      // TO DO
+		      const double distance_check = 0.3;
+		      double x_err = robot_pose.x - cur_goal.x;
+		      double y_err = robot_pose.y - cur_goal.y;
+		      double distance = x_err * x_err + y_err * y_err;
+		      //printf("distance %.3f\n", distance);
+		      if (distance < distance_check * distance_check) {
+			      printf("arrived %d, distance: %.3f\n", look_ahead_idx, std::sqrt(distance));
+			      look_ahead_idx++;
+			      pid_ctrl.reset();
+		      }
+		      if (look_ahead_idx == path_RRT.size()) {
+			      state = FINISH;
+			      printf("Goal in!!, state: %d\n", state );
+			      break;
+		      }
+
+		      ros::spinOnce();
+		      control_rate.sleep();
+	      }
         } break;
 
         case FINISH: {
+	    printf("Enterred FINISH state.\n");
             setcmdvel(0,0);
             cmd_vel_pub.publish(cmd);
             running = false;
@@ -236,16 +298,46 @@ void generate_path_RRT()
      * 3.  store path to variable "path_RRT"
      * 4.  when you store path, you have to reverse the order of points in the generated path since BACKTRACKING makes a path in a reverse order (goal -> start).
      * 5. end
-     */
+    */
 
-    for (int i = 0; i < waypoints.size()-1; i++) {
-        rrtTree thisTree = rrtTree(waypoints[i], waypoints[i+1], map, map_origin_x, map_origin_y, res, margin);
+    srand((int)time(NULL));
+    traj start_traj;
+    start_traj.x = waypoints[0].x;
+    start_traj.y = waypoints[0].y;
+    start_traj.th = waypoints[0].th;
+    path_RRT.push_back(start_traj);
+
+    printf("waypoint size : %d\n", waypoints.size());
+    point x_init = waypoints[0];
+    point x_goal;
+    rrtTree thisTree;
+    traj lastPoint;
+
+    for (int i = 1; i < waypoints.size(); i++) {
+    //for (int i = 1; i < waypoints.size(); i++) {
+        x_goal = waypoints[i];
+        //printf("generateRRT %d / %d\n", i, waypoints.size()-1);
+        thisTree = rrtTree(x_init, x_goal, map, map_origin_x, map_origin_y, res, margin);
         thisTree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
-        std::vector<traj> this_traj = thisTree.backtracking_traj(); 
-		for (int j = this_traj.size()-1; j >= 0; j--) {
-			path_RRT.push_back(this_traj[j]);
-		}
+        std::vector<traj> this_traj = thisTree.backtracking_traj();
+        for (int j = this_traj.size()-1; j >= 0; j--) {
+            path_RRT.push_back(this_traj[j]);
+        }
+        lastPoint = this_traj[0];
+        x_init.x = lastPoint.x;
+        x_init.y = lastPoint.y;
+        x_init.th = lastPoint.th;
+        thisTree.visualizeTree(path_RRT);
     }
+    printf("visualize\n");
+    //rrtTree temp;
+    printf("generate_path_RRT end\n");
+    /*
+    for (int i = 0; i < path_RRT.size(); i++) {
+        printf("%d, %.3f, %.3f, %.3f\n",path_RRT[i].x, path_RRT[i].y, path_RRT[i].th);
+    }
+    */
+
 }
 
 void set_waypoints()
@@ -271,6 +363,7 @@ void set_waypoints()
 
 
 void callback_state(gazebo_msgs::ModelStatesConstPtr msgs){
+    model_states = msgs;
     for(int i; i < msgs->name.size(); i++){
         if(std::strcmp(msgs->name[i].c_str(),"racecar") == 0){
             robot_pose.x = msgs->pose[i].position.x;

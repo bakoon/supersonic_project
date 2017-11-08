@@ -1,0 +1,2 @@
+
+-DCATKIN_DEVEL_PREFIX=/home/kimtaehong/Downloads/supersonic_project/project2/devel -DCMAKE_INSTALL_PREFIX=/home/kimtaehong/Downloads/supersonic_project/project2/install -G Unix Makefiles
