@@ -291,12 +291,23 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
         //testing whether distance < MaxStep effect the result
         //if (distance < min_dist  && alpha_check ) { ///////need check
         //if (std::abs(th_err) < min_ang && distance > L * L && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
-        if (std::abs(th_err) < min_ang && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
+        if (distance < 0.2 * 0.2) {
+            //printf("exists near point already\n");
+            min_idx = -1;
+            break;
+            //None
+        }
+        else if (std::abs(th_err) < min_ang && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
             min_idx = i;
             //printf("break idx %d\n", i);
             //break;
             min_dist = distance;
             min_ang = std::abs(th_err);
+            /*
+            if (rand() % 10 == 0) {
+                break; // probabilistic early stop
+            }
+            */
         }
     }
     //printf("nearest neighbor : %d\n", min_idx);
@@ -322,19 +333,13 @@ int rrtTree::nearestNeighbor(point x_rand) {
 int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //TODO
     //printf("newstate\n");
-   
+
     const int max_try = 100;//5000;
     double min_distance = DBL_MAX;
     double new_d, new_alpha, new_beta;
     point newPoint;
-    point nearX;
-    nearX.x = x_near.x;
-    nearX.y = x_near.y;
-    nearX.th = x_near.th;
-    point randX;
-    randX.x = x_rand.x;
-    randX.y = x_rand.y;
-    randX.th = x_rand.th;
+    point nearX = x_near;
+    point randX = x_rand;
     //printf("xnear %.3f, %.3f, xrand %.3f, %.3f\n", nearX.x, nearX.y, randX.x, randX.y);
 
     for (int i = 0; i < max_try; i++) {

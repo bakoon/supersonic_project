@@ -250,7 +250,7 @@ int main(int argc, char** argv){
                 }
                 //printf("car pose %.3f, %.3f, cur goal %.3f, %.3f, ctrl %.3f\n", robot_pose.x, robot_pose.y, cur_goal.x, cur_goal.y, ctrl);
 				cmd.drive.speed = 1.5;//MAX(2.0, MIN(3.0, 1.0/ctrl));//;
-				cmd.drive.steering_angle += ctrl; //pid~'
+				cmd.drive.steering_angle = ctrl; //pid~'
 				cmd_vel_pub.publish(cmd);
 				// TO DO
 				const double distance_check = 0.3;
@@ -328,9 +328,9 @@ void generate_path_RRT()
         x_init.x = lastPoint.x;
         x_init.y = lastPoint.y;
         x_init.th = lastPoint.th;
+        thisTree.visualizeTree(path_RRT);
     }
     printf("visualize\n");
-    thisTree.visualizeTree(path_RRT);
     //rrtTree temp;
     printf("generate_path_RRT end\n");
     /*
