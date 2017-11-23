@@ -188,7 +188,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     //TODO
     //printf("generateRRT start\n");
     int count = 0;
-    const int max_route = 20000;
+    const int max_route = 5000;
     const int goal_bias = 5;
     bool bool_goal_bias = false;
     //for (int i = 0; i < max_route; ++i) {
@@ -215,6 +215,9 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
             //printf("getNewState %d\n", getNewState);
             if (getNewState == 0) {
                 count++;
+                if (count == max_route) {
+                    return 1;
+                }
                 bool_goal_bias = true;
                 printf("RRT node # %d, %.3f, %.3f, %.3f\n", count, out[0], out[1], out[2]);
                 point newVertex;
@@ -238,6 +241,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
         }
     }
     //printf("generateRRT fin\n");
+    return 0;
 }
 
 point rrtTree::randomState(double x_max, double x_min, double y_max, double y_min) {
@@ -303,17 +307,16 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
             break;
             //None
         }
-        else if (std::abs(th_err) < min_ang && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
+        //else
+        if (std::abs(th_err) < min_ang && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
             min_idx = i;
             //printf("break idx %d\n", i);
             //break;
             min_dist = distance;
             min_ang = std::abs(th_err);
-            /*
-            if (rand() % 10 == 0) {
-                break; // probabilistic early stop
-            }
-            */
+            //if (rand() % 10 == 0) {
+            //    break; // probabilistic early stop
+            //}
         }
     }
     //printf("nearest neighbor : %d\n", min_idx);
@@ -340,7 +343,8 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //TODO
     //printf("newstate\n");
 
-    const int max_try = 100;//5000;
+    const int max_try = 100;
+    const int stepSize = 10;
     double min_distance = DBL_MAX;
     double new_d, new_alpha, new_beta;
     point newPoint;
@@ -353,7 +357,6 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         //double random_number = ((double)rand()/(double)RAND_MAX) * 2;
         //double d = MIN(random_number * MaxStep, MaxStep);
         //double d = MaxStep;
-        const int stepSize = 10;
         double d = (double)(rand()%stepSize + 1) / (double)stepSize * MaxStep;
         //printf("alpha %.3f, d %.3f\n", alpha, d);
         //int max_iter = (int)(MaxStep / d);
@@ -376,8 +379,8 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         double y_err = newPoint.y - x_rand.y;
 
         double distance = x_err * x_err + y_err * y_err;
-        //if (distance < min_distance) {
-        if (distance < min_distance) {// && distance > L * L) {
+        if (distance < min_distance) {
+        //if (distance < min_distance && distance > L * L) {
             min_distance = distance;
             newPoint.x = newX;
             newPoint.y = newY;
@@ -462,7 +465,7 @@ bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
 
     double newx = x1_i;
     double newy = x1_j; // start point
-    printf("\n\n\nmax_iter %d, x1 %.1f, %.1f, %.1f, %.1f, x2 %.1f, %.1f, %.1f, %.1f\n", max_iter, x1.x, x1.y, x1_i, x1_j, x2.x, x2.y, x2_i, x2_j);
+    //printf("\n\n\nmax_iter %d, x1 %.1f, %.1f, %.1f, %.1f, x2 %.1f, %.1f, %.1f, %.1f\n", max_iter, x1.x, x1.y, x1_i, x1_j, x2.x, x2.y, x2_i, x2_j);
     //printf("col size : %d, row size : %d\n", map_col_size, map_row_size);
 
 
@@ -482,7 +485,7 @@ bool rrtTree::isCollision(point x1, point x2, double d, double alpha) {
 
         //printf("collisioncheck %d, x, y : %.3f, %.3f\n", i, newx, newy);
         int collisionInfo = this->map.at<uchar>((int)(newx+0.5), (int)(newy+0.5));
-        printf("%d, newx %d, newy %d, collision: %d\n", i, (int)(newx+0.5), (int)(newy+0.5), collisionInfo);
+        //printf("%d, newx %d, newy %d, collision: %d\n", i, (int)(newx+0.5), (int)(newy+0.5), collisionInfo);
 
         if (collisionInfo == 0) {// || (collisionInfo == 125)) { // occupied 
             //printf("collision detected\n");

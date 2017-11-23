@@ -30,7 +30,7 @@ double world_y_min;
 double world_y_max;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 0;
+int margin = 4;//2;
 int K = 500;
 double MaxStep = 2;
 
@@ -285,12 +285,6 @@ int main(int argc, char** argv){
 
 void generate_path_RRT()
 {
-    for (int i=0; i<map_x_range; i++) {
-        for (int j=map_y_range; j>=0; j--) {
-            printf("%d\t", map.at<uchar>(i, j));
-        }
-        printf("\n");
-    }
 
     //TODO
     srand((int)time(NULL));
@@ -302,17 +296,21 @@ void generate_path_RRT()
 
     printf("waypoint size : %d\n", waypoints.size());
     point x_init = waypoints[0];
-    printf("xinit x %.3f, y %.3f\n", x_init.x, x_init.y);
+    //printf("xinit x %.3f, y %.3f\n", x_init.x, x_init.y);
     point x_goal;
     rrtTree thisTree;
     traj lastPoint;
+    
 
     for (int i = 1; i < waypoints.size(); i++) {
     //for (int i = 1; i < waypoints.size(); i++) {
         x_goal = waypoints[i];
-        //printf("generateRRT %d / %d\n", i, waypoints.size()-1);
-        thisTree = rrtTree(x_init, x_goal, map, map_origin_x, map_origin_y, res, margin);
-        thisTree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+        printf("generateRRT %d / %d\n", i, waypoints.size()-1);
+        int ret_gen = 1;
+        while(ret_gen) {
+            thisTree = rrtTree(x_init, x_goal, map, map_origin_x, map_origin_y, res, margin);
+            ret_gen = thisTree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+        }
         std::vector<traj> this_traj = thisTree.backtracking_traj();
         for (int j = this_traj.size()-1; j >= 0; j--) {
             path_RRT.push_back(this_traj[j]);
