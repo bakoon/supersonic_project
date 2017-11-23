@@ -14,7 +14,7 @@ PID::PID(){
     this->delta_t = 1. / 60.;
     this->error = 0;
     this->error_sum = 0;
-    this->error_diff = 0;
+    //this->error_diff = 0;
 }
 
 void PID::reset(){

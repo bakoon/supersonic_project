@@ -10,4 +10,17 @@ project1/launch/
 project1/package.xml
 project1/worlds/
 
+project2/build/
+project2/devel/
+project2/launch/
+project2/package.xml
+project2/worlds/
+
+hector_slam/
+
+project3/launch/
+project3/package.xml
+project3/scripts/
+project3/worlds/
+
 *.swp
