@@ -30,7 +30,7 @@ double world_y_min;
 double world_y_max;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 8;
+int margin = 0;
 int K = 500;
 double MaxStep = 2;
 
@@ -73,6 +73,7 @@ int main(int argc, char** argv){
 
     map_y_range = map.cols;
     map_x_range = map.rows;
+    printf("map size %d, %d\n", map_x_range, map_y_range);
     map_origin_x = map_x_range/2.0 - 0.5;
     map_origin_y = map_y_range/2.0 - 0.5;
     world_x_min = -4.5;
@@ -284,6 +285,13 @@ int main(int argc, char** argv){
 
 void generate_path_RRT()
 {
+    for (int i=0; i<map_x_range; i++) {
+        for (int j=map_y_range; j>=0; j--) {
+            printf("%d\t", map.at<uchar>(i, j));
+        }
+        printf("\n");
+    }
+
     //TODO
     srand((int)time(NULL));
     traj start_traj;
@@ -294,6 +302,7 @@ void generate_path_RRT()
 
     printf("waypoint size : %d\n", waypoints.size());
     point x_init = waypoints[0];
+    printf("xinit x %.3f, y %.3f\n", x_init.x, x_init.y);
     point x_goal;
     rrtTree thisTree;
     traj lastPoint;
