@@ -16,7 +16,6 @@
 #include <project2/pid.h>
 #include <math.h>
 #include <pwd.h>
-#include <time.h>
 
 //map spec
 cv::Mat map;
@@ -31,19 +30,15 @@ double world_y_min;
 double world_y_max;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 15;
-int K = 1500;
-double MaxStep = 4;
+int margin = 8;
+int K = 500;
+double MaxStep = 2;
 
 //way points
 std::vector<point> waypoints;
 
 //path
-//std::vector<point> path_RRT;
 std::vector<traj> path_RRT;
-
-//control
-//std::vector<control> control_RRT;
 
 //robot
 point robot_pose;
@@ -72,20 +67,18 @@ int main(int argc, char** argv){
 
     // Load Map
 
-    //char* user = getlogin();
     char* user = getpwuid(getuid())->pw_name;
- 
-    map = cv::imread((std::string("/home/")+ std::string(user) + 
-                      std::string("/catkin_ws/src/project2/src/ground_truth_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
+    map = cv::imread((std::string("/home/") + std::string(user) +
+                      std::string("/catkin_ws/src/project3/src/ground_truth_map.pgm")).c_str(), CV_LOAD_IMAGE_GRAYSCALE);
 
     map_y_range = map.cols;
     map_x_range = map.rows;
     map_origin_x = map_x_range/2.0 - 0.5;
     map_origin_y = map_y_range/2.0 - 0.5;
-    world_x_min = -10.0;
-    world_x_max = 10.0;
-    world_y_min = -10.0;
-    world_y_max = 10.0;
+    world_x_min = -4.5;
+    world_x_max = 4.5;
+    world_y_min = -13.5;
+    world_y_max = 13.5;
     res = 0.05;
     printf("Load map\n");
 
@@ -236,44 +229,7 @@ int main(int argc, char** argv){
         } break;
 
         case RUNNING: {
-			// TO DO
-			PID pid_ctrl;
-            const double max_ctrl = 0.8;
-			while(ros::ok()) {
-				traj cur_goal = path_RRT[look_ahead_idx];
-				double ctrl = pid_ctrl.get_control(robot_pose, cur_goal, cur_goal);
-                if (ctrl > 0) {
-                    ctrl = MIN(max_ctrl, ctrl);
-                }
-                else {
-                    ctrl = MAX(-max_ctrl, ctrl);
-                }
-                //printf("car pose %.3f, %.3f, cur goal %.3f, %.3f, ctrl %.3f\n", robot_pose.x, robot_pose.y, cur_goal.x, cur_goal.y, ctrl);
-				cmd.drive.speed = MAX(1.0, MIN(2.0, 1.0/std::abs(ctrl)));//;
-                printf("ctrl : %.3f, speed : %.3f\n", ctrl, cmd.drive.speed);
-				cmd.drive.steering_angle = ctrl; //pid~'
-				cmd_vel_pub.publish(cmd);
-				// TO DO
-				const double distance_check = 0.2;
-			    double x_err = robot_pose.x - cur_goal.x;
-                double y_err = robot_pose.y - cur_goal.y;
-                double distance = x_err * x_err + y_err * y_err;
-                //printf("distance %.3f\n", distance);
-                if (distance < distance_check * distance_check) {
-                    printf("distance %.3f, arrived %d\n", distance, look_ahead_idx);
-                    look_ahead_idx++;
-				    traj cur_goal = path_RRT[look_ahead_idx]; // not used ****remove****
-                    printf("next point %.3f, %.3f, %.3f\n\n", cur_goal.x, cur_goal.y, cur_goal.th);
-                    pid_ctrl.reset();
-                }
-                if (look_ahead_idx == (int)path_RRT.size()) {
-                    state = FINISH;
-                }
-
-				ros::spinOnce();
-				control_rate.sleep();
-			}
-
+	    //TODO
         } break;
 
         case FINISH: {
@@ -293,70 +249,25 @@ int main(int argc, char** argv){
 
 void generate_path_RRT()
 {
-    /*
-     * 1. for loop
-     * 2.  call RRT generate function in order to make a path which connects i way point to i+1 way point.
-     * 3.  store path to variable "path_RRT"
-     * 4.  when you store path, you have to reverse the order of points in the generated path since BACKTRACKING makes a path in a reverse order (goal -> start).
-     * 5. end
-    */
-
-    srand((int)time(NULL));
-    traj start_traj;
-    start_traj.x = waypoints[0].x;
-    start_traj.y = waypoints[0].y;
-    start_traj.th = waypoints[0].th;
-    path_RRT.push_back(start_traj);
-
-    printf("waypoint size : %d\n", waypoints.size());
-    point x_init = waypoints[0];
-    point x_goal;
-    rrtTree thisTree;
-    traj lastPoint;
-
-    for (int i = 1; i < waypoints.size(); i++) {
-    //for (int i = 1; i < waypoints.size(); i++) {
-        x_goal = waypoints[i];
-        printf("generateRRT %d / %d\n", i, waypoints.size()-1);
-        thisTree = rrtTree(x_init, x_goal, map, map_origin_x, map_origin_y, res, margin);
-        thisTree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
-        std::vector<traj> this_traj = thisTree.backtracking_traj();
-
-        for (int j = this_traj.size()-1; j >= 0; j--) {
-            path_RRT.push_back(this_traj[j]);
-        }
-        lastPoint = this_traj[0];
-        x_init.x = lastPoint.x;
-        x_init.y = lastPoint.y;
-        x_init.th = lastPoint.th;
-    }
-    printf("visualize\n");
-    thisTree.visualizeTree(path_RRT);
-    //rrtTree temp;
-    printf("generate_path_RRT end\n");
-    /*
-    for (int i = 0; i < path_RRT.size(); i++) {
-        printf("%d, %.3f, %.3f, %.3f\n",path_RRT[i].x, path_RRT[i].y, path_RRT[i].th);
-    }
-    */
-
+    //TODO
 }
 
 void set_waypoints()
 {
-    point waypoint_candid[4];
-    waypoint_candid[0].x = 5.0;
-    waypoint_candid[0].y = -8.0;
-    waypoint_candid[1].x = -6.0;
-    waypoint_candid[1].y = -7.0;
-    waypoint_candid[2].x = -7.0;
-    waypoint_candid[2].y = 6.0;
-    waypoint_candid[3].x = 3.0;
-    waypoint_candid[3].y = 7.0;
-    waypoint_candid[3].th = 0.0;
+    point waypoint_candid[5];
+    waypoint_candid[0].x = -3.5;
+    waypoint_candid[0].y = 12.0;
+    waypoint_candid[1].x = 2.0;
+    waypoint_candid[1].y = 12.0;
+    waypoint_candid[2].x = 3.5;
+    waypoint_candid[2].y = -10.5;
+    waypoint_candid[3].x = -2.0;
+    waypoint_candid[3].y = -12.0;
+    waypoint_candid[4].x = -3.5;
+    waypoint_candid[4].y = 10.0;
 
-    int order[] = {3,1,2,3};
-    int order_size = 3;
+    int order[] = {0,1,2,3,4};
+    int order_size = 5;
 
     for(int i = 0; i < order_size; i++){
         waypoints.push_back(waypoint_candid[order[i]]);
