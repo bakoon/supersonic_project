@@ -6,7 +6,7 @@
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))  
 #include <cmath>
 
-double max_alpha = 0.3;//15;
+double max_alpha = 0.3;
 double L = 0.325;
 
 rrtTree::rrtTree() {
@@ -267,9 +267,9 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
     double y = x_rand.y;
 
     //max_alpha
-    int start_idx = 0; // need check
 
-    for(int i = start_idx; i < this->count; i++) {
+    //for(int i = 0; i < this->count; i++) {
+    for(int i = this->count-1; i >=0 ; i--) {
         //printf("count %d\n", i);
         point x_near = this->ptrTable[i]->location;
         //printf("%d, %d, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\n", x_near.x, x_near.y, x_rand.x, x_rand.y, x, y, temp.x, temp.y);
@@ -307,16 +307,15 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
             break;
             //None
         }
-        //else
-        if (std::abs(th_err) < min_ang && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
+        else if (std::abs(th_err) < min_ang && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
             min_idx = i;
             //printf("break idx %d\n", i);
             //break;
             min_dist = distance;
             min_ang = std::abs(th_err);
-            //if (rand() % 10 == 0) {
-            //    break; // probabilistic early stop
-            //}
+            if (rand() % 10 == 0) {
+                break; // probabilistic early stop
+            }
         }
     }
     //printf("nearest neighbor : %d\n", min_idx);
@@ -343,21 +342,23 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //TODO
     //printf("newstate\n");
 
-    const int max_try = 100;
+    const int max_try = 1000;
     const int stepSize = 10;
     double min_distance = DBL_MAX;
     double new_d, new_alpha, new_beta;
     point newPoint;
     point nearX = x_near;
     point randX = x_rand;
+    double alpha = 0;
+    double d = MaxStep;
     //printf("xnear %.3f, %.3f, xrand %.3f, %.3f\n", nearX.x, nearX.y, randX.x, randX.y);
 
     for (int i = 0; i < max_try; i++) {
-        double alpha = (((double)rand()/(double)RAND_MAX) - 0.5) * 2 * max_alpha; // in [-max_alpha, max_alpha] 
+        alpha = (((double)rand()/(double)RAND_MAX) - 0.5) * 2 * max_alpha; // in [-max_alpha, max_alpha] 
         //double random_number = ((double)rand()/(double)RAND_MAX) * 2;
         //double d = MIN(random_number * MaxStep, MaxStep);
         //double d = MaxStep;
-        double d = (double)(rand()%stepSize + 1) / (double)stepSize * MaxStep;
+        d = MAX(L, (double)(rand()%stepSize + 1) / (double)stepSize * MaxStep);
         //printf("alpha %.3f, d %.3f\n", alpha, d);
         //int max_iter = (int)(MaxStep / d);
 
@@ -373,10 +374,10 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         double newX = centerX + radius * sin(theta + beta);
         double newY = centerY - radius * cos(theta + beta);
 
-        //double x_err = newX - x_rand.x;
-        //double y_err = newY - x_rand.y;
-        double x_err = newPoint.x - x_rand.x;
-        double y_err = newPoint.y - x_rand.y;
+        double x_err = newX - x_rand.x;
+        double y_err = newY - x_rand.y;
+        //double x_err = newPoint.x - x_rand.x;
+        //double y_err = newPoint.y - x_rand.y;
 
         double distance = x_err * x_err + y_err * y_err;
         if (distance < min_distance) {
