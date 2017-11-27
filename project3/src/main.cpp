@@ -30,9 +30,9 @@ double world_y_min;
 double world_y_max;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 4;//2;
+int margin = 6;
 int K = 500;
-double MaxStep = 3;
+double MaxStep = 2;
 
 //way points
 std::vector<point> waypoints;
@@ -300,27 +300,54 @@ void generate_path_RRT()
     point x_goal;
     rrtTree thisTree;
     traj lastPoint;
-    
+    std::vector<traj> traj_array[waypoints.size()]; 
+    int goal_idx = 1;
 
-    for (int i = 1; i < waypoints.size(); i++) {
+    //for (int i = 0; i < waypoints.size()-1; i++) {
     //for (int i = 1; i < waypoints.size(); i++) {
-        x_goal = waypoints[i];
-        printf("generateRRT %d / %d\n", i, waypoints.size()-1);
+    while( goal_idx < waypoints.size() ) {
+        x_goal = waypoints[goal_idx];
+        printf("generateRRT %d / %d\n", goal_idx, waypoints.size()-1);
         int ret_gen = 1;
+        int ret_count = 0;
         while(ret_gen) {
+            if (goal_idx != 1 && ret_count == 2) { // failed twice : retry previous one
+                break;
+            }
             thisTree = rrtTree(x_init, x_goal, map, map_origin_x, map_origin_y, res, margin);
             ret_gen = thisTree.generateRRT(world_x_max, world_x_min, world_y_max, world_y_min, K, MaxStep);
+            ret_count++;
         }
-        std::vector<traj> this_traj = thisTree.backtracking_traj();
+
+        if (ret_gen) { // come back
+            if (goal_idx == 2) {
+                x_init = waypoints[0];
+
+            }
+            else {
+                lastPoint = traj_array[goal_idx-3][0];
+                x_init.x = lastPoint.x;
+                x_init.y = lastPoint.y;
+                x_init.th = lastPoint.th;
+            }
+            goal_idx--;
+        }
+        else { // go next
+            traj_array[goal_idx-1] = thisTree.backtracking_traj();
+            lastPoint = traj_array[goal_idx-1][0];
+            x_init.x = lastPoint.x;
+            x_init.y = lastPoint.y;
+            x_init.th = lastPoint.th;
+            goal_idx++;
+        }
+    }
+    for (int i = 0; i < waypoints.size(); i++) {
+        std::vector<traj> this_traj = traj_array[i];
         for (int j = this_traj.size()-1; j >= 0; j--) {
             path_RRT.push_back(this_traj[j]);
         }
-        lastPoint = this_traj[0];
-        x_init.x = lastPoint.x;
-        x_init.y = lastPoint.y;
-        x_init.th = lastPoint.th;
-        thisTree.visualizeTree(path_RRT);
     }
+    //thisTree.visualizeTree(path_RRT);
 }
 
 void set_waypoints()

@@ -188,11 +188,12 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     //TODO
     //printf("generateRRT start\n");
     int count = 0;
-    const int max_route = 5000;
+    const int max_route = 30000;
     const int goal_bias = 5;
     bool bool_goal_bias = false;
     //for (int i = 0; i < max_route; ++i) {
     while (count < max_route) {
+        count++;
         point randVertex;
         if (bool_goal_bias && count % goal_bias == 0) {
             //printf("bias\n");
@@ -214,12 +215,11 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
             int getNewState = this->newState(out, ptrTable[idx_near]->location, randVertex, MaxStep);
             //printf("getNewState %d\n", getNewState);
             if (getNewState == 0) {
-                count++;
                 if (count == max_route) {
-                    return 1;
+                    return 1; // fail
                 }
                 bool_goal_bias = true;
-                printf("RRT node # %d, %.3f, %.3f, %.3f\n", count, out[0], out[1], out[2]);
+                //printf("RRT node # %d, %.3f, %.3f, %.3f\n", count, out[0], out[1], out[2]);
                 point newVertex;
                 newVertex.x = out[0];
                 newVertex.y = out[1];
@@ -234,14 +234,12 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
                 //printf("distance %.3f\n", distance);
                 //double distance = std::sqrt((out[0] - this->x_goal.x)*(out[0] - this->x_goal.x) + (out[1] - this->x_goal.y)*(out[1] - this->x_goal.y));
                 if (count > K && distance < 0.2*0.2) {
-                    break;
+                    return 0; // success
                     //printf("early stop\n");
                 }
             }
         }
     }
-    //printf("generateRRT fin\n");
-    return 0;
 }
 
 point rrtTree::randomState(double x_max, double x_min, double y_max, double y_min) {
@@ -301,13 +299,16 @@ int rrtTree::nearestNeighbor(point x_rand, double MaxStep) {
         //if (std::abs(th_err) < min_ang && distance > L * L && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
 
         //printf("th_err %.3f, distnace %.3f, MaxStep %.3f, max_alpha %.3f\n", th_err, distance, MaxStep, max_alpha);
+        /*
         if (distance < 0.2 * 0.2) {
             //printf("exists near point already\n");
             min_idx = -1;
             break;
             //None
         }
-        else if (std::abs(th_err) < min_ang && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
+        else
+        */
+        if (std::abs(th_err) < min_ang && distance < MaxStep*MaxStep && alpha_check ) { ///////need check
             min_idx = i;
             //printf("break idx %d\n", i);
             //break;
