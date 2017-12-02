@@ -23,4 +23,12 @@ project3/package.xml
 project3/scripts/
 project3/worlds/
 
+project4/launch/
+project4/package.xml
+project4/scripts/
+project4/worlds/
+
+navigation-kinetic-devel/
+
+
 *.swp
