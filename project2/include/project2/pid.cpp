@@ -8,9 +8,9 @@
 PID::PID(){
     //initialize
     
-    this->Kp = 1.5;//0.05;
-    this->Ki = 0;//0.002;
-    this->Kd = 5/60.;//0.60;
+    this->Kp = 1.5;
+    this->Ki = 0.05;//0.05;
+    this->Kd = 30./60.;//0.03;
     this->delta_t = 1. / 60.;
     this->error = 0;
     this->error_sum = 0;

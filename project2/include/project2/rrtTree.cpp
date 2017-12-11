@@ -114,7 +114,7 @@ void rrtTree::visualizeTree(){
     cv::waitKey(1);
 }
 
-void rrtTree::visualizeTree(std::vector<traj> path){
+cv::Mat rrtTree::visualizeTree(std::vector<traj> path){
     int thickness = 1;
     int lineType = 8;
     int idx_parent;
@@ -163,11 +163,12 @@ void rrtTree::visualizeTree(std::vector<traj> path){
             cv::line(imgResult, x1, x2, cv::Scalar(255, 0, 0), thickness, lineType);
 	}
     }
-    cv::namedWindow("Mapping");
+    //cv::namedWindow("Mapping");
     //cv::Rect imgROI((int)Res*200,(int)Res*200,(int)Res*400,(int)Res*400);
     //cv::imshow("Mapping", imgResult(imgROI));
-    cv::imshow("Mapping", imgResult);
-    cv::waitKey(1);
+    //cv::imshow("Mapping", imgResult);
+    //cv::waitKey(1);
+    return imgResult;
 }
 
 void rrtTree::addVertex(point x_new, point x_rand, int idx_near, double alpha, double d) {
@@ -188,7 +189,7 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     //TODO
     //printf("generateRRT start\n");
     int count = 0;
-    const int max_route = 30000;
+    const int max_route = 10000;
     const int goal_bias = 5;
     bool bool_goal_bias = false;
     //for (int i = 0; i < max_route; ++i) {
@@ -343,7 +344,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //TODO
     //printf("newstate\n");
 
-    const int max_try = 1000;
+    const int max_try = 3000;
     const int stepSize = 10;
     double min_distance = DBL_MAX;
     double new_d, new_alpha, new_beta;

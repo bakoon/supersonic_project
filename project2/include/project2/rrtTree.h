@@ -51,7 +51,7 @@ public:
     ~rrtTree();
 
     void visualizeTree();
-    void visualizeTree(std::vector<traj> path);
+    cv::Mat visualizeTree(std::vector<traj> path);
     int generateRRT(double x_max, double x_min, double y_max, double y_min, int K, double MaxStep);
     std::vector<traj> backtracking_traj();
 };
