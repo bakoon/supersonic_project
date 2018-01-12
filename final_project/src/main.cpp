@@ -30,10 +30,10 @@ double world_y_min;
 double world_y_max;
 
 //parameters we should adjust : K, margin, MaxStep
-int margin = 6;
-int K = 500;
+int margin = 4;
+int K = 200;
 double MaxStep = 2;
-int waypoint_margin = 24;
+int waypoint_margin = 20;
 
 //way points
 std::vector<point> waypoints;
@@ -128,6 +128,7 @@ int main(int argc, char** argv){
                 double y_err = robot_pose.y - cur_goal.y;
                 double distance = x_err * x_err + y_err * y_err;
                 double ctrl = pid_ctrl.get_control(robot_pose, cur_goal, cur_goal);
+                double new_speed;
                 if (ctrl > 0) {
                     ctrl = MIN(max_ctrl, ctrl);
                 }
@@ -136,9 +137,8 @@ int main(int argc, char** argv){
                 }
                 //printf("car pose %.3f, %.3f, cur goal %.3f, %.3f, ctrl %.3f\n", robot_pose.x, robot_pose.y, cur_goal.x, cur_goal.y, ctrl);
                 /*
-                double new_speed = MIN(std::exp(distance/2), 3.5-std::exp(std::abs(ctrl)));
+                new_speed = MIN(std::exp(distance/2), 3.5-std::exp(std::abs(ctrl)));
                 new_speed = MAX(new_speed, 1.6);
-                //printf("ctrl %.2f, distance %.2f, newspeed %.2f\n", ctrl, distance, new_speed);
                 double diff = new_speed - speed;
                 if (diff < 0) { //brake
                     new_speed = (speed + new_speed) / 2.;
@@ -149,7 +149,21 @@ int main(int argc, char** argv){
                 speed = new_speed;
                 cmd.drive.speed = speed;
                 */
-                cmd.drive.speed = 1.5;
+                if (std::abs(ctrl) < 0.1)
+                {
+                    ctrl = 0;
+                    new_speed = 2.5;
+                }
+                else if (std::abs(ctrl) == max_ctrl)
+                {
+                    new_speed = 1.5;
+                }
+                else
+                {
+                    new_speed = 2.0;
+                }
+                //printf("ctrl %.2f, distance %.2f, newspeed %.2f\n", ctrl, distance, new_speed);
+                cmd.drive.speed = new_speed;
                 cmd.drive.steering_angle = ctrl; //pid~'
                 cmd_vel_pub.publish(cmd);
                 // TO DO
@@ -266,15 +280,20 @@ void set_waypoints()
         }
     }
 
+
     waypoint_candid[4].x = waypoint_candid[0].x;
     waypoint_candid[4].y = waypoint_candid[0].y;
+
+
     // Waypoints for arbitrary goal points.
     // TA will change this part before scoring.
     // This is an example.
     waypoint_candid[5].x = 1.5;
     waypoint_candid[5].y = 1.5;
-    waypoint_candid[6].x = -2;
-    waypoint_candid[6].y = -9.0;
+    waypoint_candid[6].x = 1.5;
+    waypoint_candid[6].y = 3;
+    //waypoint_candid[6].x = -2;
+    //waypoint_candid[6].y = -9.0;
 
     int order[] = {0,1,2,3,4,5,6};
     int order_size = 7;
@@ -340,7 +359,7 @@ void generate_path_RRT()
     //for (int i = 1; i < waypoints.size(); i++) {
     while( goal_idx < waypoints.size() ) {
         x_goal = waypoints[goal_idx];
-        //printf("generateRRT %d / %d\n", goal_idx, waypoints.size()-1);
+        printf("generateRRT %d / %d\n", goal_idx, waypoints.size()-1);
         int ret_gen = 1;
         int ret_count = 0;
         while(ret_gen) {

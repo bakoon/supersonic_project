@@ -6,7 +6,7 @@
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))  
 #include <cmath>
 
-double max_alpha = 0.3;
+double max_alpha = 0.35;
 double L = 0.325;
 
 rrtTree::rrtTree() {
@@ -189,8 +189,8 @@ int rrtTree::generateRRT(double x_max, double x_min, double y_max, double y_min,
     //TODO
     //printf("generateRRT start\n");
     int count = 0;
-    const int max_route = 10000;
-    const int goal_bias = 5;
+    const int max_route = 50000;
+    const int goal_bias = 3;
     bool bool_goal_bias = false;
     //for (int i = 0; i < max_route; ++i) {
     while (count < max_route) {
@@ -344,7 +344,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
     //TODO
     //printf("newstate\n");
 
-    const int max_try = 3000;
+    const int max_try = 500;
     const int stepSize = 10;
     double min_distance = DBL_MAX;
     double new_d, new_alpha, new_beta;
@@ -360,7 +360,7 @@ int rrtTree::newState(double *out, point x_near, point x_rand, double MaxStep) {
         //double random_number = ((double)rand()/(double)RAND_MAX) * 2;
         //double d = MIN(random_number * MaxStep, MaxStep);
         //double d = MaxStep;
-        d = MAX(L, (double)(rand()%stepSize + 1) / (double)stepSize * MaxStep);
+        d = (double)(rand()%stepSize + 1) / (double)stepSize * MaxStep;
         //printf("alpha %.3f, d %.3f\n", alpha, d);
         //int max_iter = (int)(MaxStep / d);
 
